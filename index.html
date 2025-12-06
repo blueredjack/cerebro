@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEREBRO - Visualizador de Ranges MTT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* ==================== RESET & BASE ==================== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-main: #0a0e17;
+            --bg-header: #0c1220;
+            --bg-card: #0f1823;
+            --bg-cell: #1a2332;
+            --border-main: #1e2d3d;
+            --border-light: #2a3a4a;
+            
+            --text-white: #ffffff;
+            --text-gray: #7a8a9a;
+            --text-muted: #4a5a6a;
+            
+            --cyan: #00d4ff;
+            --cyan-glow: rgba(0, 212, 255, 0.4);
+            --coral: #e85555;
+            --orange: #ffaa00;
+            --orange-dark: #d4a017;
+            --yellow: #ffc107;
+            --green: #22c55e;
+            --purple: #9b59b6;
+            --pink: #ff6b9d;
+            
+            --fold-bg: #3d4654;
+            --raise-bg: #e85555;
+            --raise-alt-bg: #d4a017;
+            --call-bg: #22c55e;
+            --check-bg: #3498db;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-white);
+            min-height: 100vh;
+        }
+
+        /* ==================== TELA 1: HOME ==================== */
+        .home-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .home-screen.hidden { display: none; }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 4rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00d4ff, #9b59b6, #00d4ff);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 3s ease infinite;
+            margin-bottom: 10px;
+            letter-spacing: 8px;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1rem;
+            margin-bottom: 60px;
+            letter-spacing: 3px;
+        }
+
+        .category-grid {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .category-card {
+            background: linear-gradient(145deg, #1e1e32, #252540);
+            border: 2px solid #333;
+            border-radius: 20px;
+            padding: 40px 50px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+
+        .category-card:hover:not(.disabled) {
+            transform: translateY(-5px);
+            border-color: var(--cyan);
+            box-shadow: 0 10px 40px rgba(0, 212, 255, 0.2);
+        }
+
+        .category-card.disabled { opacity: 0.4; cursor: not-allowed; }
+        .category-card .icon { font-size: 3rem; margin-bottom: 15px; }
+        .category-card .name { font-size: 1.4rem; font-weight: 600; margin-bottom: 8px; }
+        .category-card .status { font-size: 0.8rem; color: var(--text-muted); }
+        .category-card.active .status { color: var(--green); }
+
+        /* ==================== TELA 2: FASES ==================== */
+        .phase-screen {
+            display: none;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .phase-screen.visible { display: flex; }
+
+        .phase-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .back-btn-simple {
+            background: var(--bg-cell);
+            border: 1px solid var(--border-main);
+            color: var(--cyan);
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        .back-btn-simple:hover { border-color: var(--cyan); box-shadow: 0 0 15px var(--cyan-glow); }
+
+        .phase-title { font-size: 2rem; font-weight: 700; color: var(--cyan); }
+        .phase-subtitle { color: var(--text-muted); font-size: 0.9rem; }
+
+        .phase-content { flex: 1; overflow-y: auto; padding: 10px; }
+        .phase-section { margin-bottom: 35px; }
+
+        .section-title {
+            font-size: 0.85rem;
+            color: var(--purple);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 3px solid var(--purple);
+        }
+
+        .phase-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+
+        .phase-card {
+            background: linear-gradient(145deg, #1a2a4a, #1e2e50);
+            border: 1px solid #2a4a6a;
+            border-radius: 12px;
+            padding: 15px 25px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 180px;
+        }
+
+        .phase-card:hover:not(.disabled) {
+            border-color: var(--cyan);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .phase-card.disabled { opacity: 0.35; cursor: not-allowed; }
+        .phase-card.active { border-color: var(--cyan); box-shadow: 0 0 25px rgba(0, 212, 255, 0.25); }
+        .phase-card .phase-icon { font-size: 1.3rem; }
+        .phase-card .phase-name { font-size: 0.95rem; font-weight: 500; }
+        .phase-card .phase-badge { margin-left: auto; font-size: 0.7rem; padding: 3px 8px; border-radius: 10px; font-weight: 600; }
+        .badge-soon { background: #333; color: #666; }
+        .badge-spots { background: rgba(155, 89, 182, 0.2); color: var(--purple); }
+
+        /* ==================== TELA 3: VISUALIZADOR ==================== */
+        .app-container {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+            background: var(--bg-main);
+        }
+        .app-container.visible { display: flex; }
+
+        /* --- Header --- */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: var(--bg-header);
+            border-bottom: 1px solid var(--border-main);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .logo-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            background: linear-gradient(90deg, #00d4ff 0%, #00ffa3 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+        }
+
+        .logo-subtitle {
+            font-size: 11px;
+            color: var(--text-gray);
+        }
+        .logo-subtitle span { color: var(--coral); }
+
+        .header-center {
+            display: flex;
+            gap: 40px;
+        }
+
+        .stat-box { text-align: center; }
+        .stat-number {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-white);
+        }
+        .stat-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            letter-spacing: 1.5px;
+        }
+
+        .btn-menu {
+            background: transparent;
+            border: 1px solid var(--border-light);
+            color: var(--text-gray);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-menu:hover { border-color: var(--cyan); color: var(--cyan); }
+
+        /* --- Stack Selector --- */
+        .stack-selector {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            padding: 14px 20px;
+            background: var(--bg-main);
+            flex-wrap: wrap;
+        }
+
+        .stack-btn {
+            background: var(--bg-cell);
+            border: 1px solid var(--border-main);
+            color: var(--text-gray);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            min-width: 44px;
+        }
+        .stack-btn:hover { background: #1a2a3a; color: var(--text-white); }
+        .stack-btn.active {
+            background: linear-gradient(180deg, #1a3a5a 0%, #0d2540 100%);
+            border-color: var(--cyan);
+            color: var(--text-white);
+            box-shadow: 0 0 12px var(--cyan-glow);
+        }
+
+        /* --- Breadcrumb --- */
+        .breadcrumb-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+        }
+
+        .btn-back {
+            background: transparent;
+            border: 1px solid var(--border-main);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-back:hover { border-color: var(--cyan); color: var(--cyan); }
+
+        .breadcrumb-tag {
+            background: var(--yellow);
+            color: #1a1a1a;
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .breadcrumb-path {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .path-item {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .path-item.fold { background: var(--fold-bg); color: var(--text-white); }
+        .path-item.call { background: var(--call-bg); color: #1a1a1a; }
+        .path-item.raise { background: var(--raise-bg); color: var(--text-white); }
+        .path-item.check { background: var(--check-bg); color: var(--text-white); }
+
+        /* --- Main Layout --- */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 340px 1fr 220px;
+            gap: 20px;
+            padding: 0 20px 20px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* --- Left Column --- */
+        .left-col {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        .mesa-title {
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .mesa-wrapper {
+            position: relative;
+            width: 100%;
+            height: 260px;
+        }
+
+        .mesa-oval {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 180px;
+            height: 100px;
+            background: linear-gradient(180deg, #0c1a2a 0%, #060d15 100%);
+            border: 2px solid var(--cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 25px var(--cyan-glow), inset 0 0 30px rgba(0, 212, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mesa-type { font-size: 10px; color: var(--cyan); letter-spacing: 1px; }
+        .mesa-blinds { font-size: 16px; font-weight: 700; color: var(--text-white); }
+        .mesa-blinds-label { font-size: 9px; color: var(--text-muted); }
+
+        /* Seats */
+        .seat {
+            position: absolute;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .seat-box {
+            background: var(--bg-cell);
+            border: 1.5px solid var(--border-main);
+            border-radius: 6px;
+            padding: 6px 10px;
+            text-align: center;
+            min-width: 54px;
+            transition: all 0.2s;
+        }
+
+        .seat:hover .seat-box { border-color: var(--cyan); }
+        .seat.hero .seat-box {
+            background: linear-gradient(180deg, #1a3a5a 0%, #0d2540 100%);
+            border-color: var(--yellow);
+            box-shadow: 0 0 15px rgba(255, 193, 7, 0.4);
+        }
+        .seat.folded .seat-box { opacity: 0.3; }
+
+        .seat-pos { font-size: 11px; font-weight: 700; color: var(--cyan); }
+        .seat-stack { font-size: 10px; color: var(--text-gray); margin-top: 2px; }
+
+        .dealer-chip {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: var(--text-white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: #1a1a1a;
+            top: -6px;
+            right: -6px;
+        }
+
+        /* Seat positions */
+        .seat[data-pos="0"] { top: 5px; left: 50%; transform: translateX(-50%); }
+        .seat[data-pos="1"] { top: 35px; right: 15px; }
+        .seat[data-pos="2"] { top: 50%; right: 5px; transform: translateY(-50%); }
+        .seat[data-pos="3"] { bottom: 35px; right: 45px; }
+        .seat[data-pos="4"] { bottom: 35px; left: 45px; }
+        .seat[data-pos="5"] { top: 50%; left: 5px; transform: translateY(-50%); }
+        .seat[data-pos="6"] { top: 35px; left: 15px; }
+
+        .mesa-hint {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+        .mesa-hint .highlight { color: var(--yellow); }
+
+        /* Stats Box */
+        .stats-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-main);
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .stats-title {
+            font-size: 11px;
+            color: var(--cyan);
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .stats-card {
+            background: var(--bg-cell);
+            border-radius: 6px;
+            padding: 10px 8px;
+            text-align: center;
+        }
+
+        .stats-card-label {
+            font-size: 9px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .stats-card-value {
+            font-size: 22px;
+            font-weight: 700;
+        }
+        .stats-card-value.fold { color: var(--text-gray); }
+        .stats-card-value.call { color: var(--green); }
+        .stats-card-value.raise { color: var(--coral); }
+
+        /* --- Center Column --- */
+        .center-col {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        .range-header {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+
+        .range-stack-label { font-size: 14px; color: var(--text-muted); }
+        .range-title { font-size: 20px; font-weight: 700; }
+        .range-title span { color: var(--cyan); }
+
+        /* Range Grid */
+        .range-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-main);
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .range-grid {
+            display: grid;
+            grid-template-columns: repeat(13, 1fr);
+            gap: 2px;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: transform 0.1s;
+            background: var(--fold-bg);
+            color: var(--text-muted);
+        }
+
+        .cell:hover {
+            transform: scale(1.15);
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        .cell.selected {
+            outline: 2px solid var(--text-white);
+            outline-offset: 1px;
+        }
+
+        /* Actions Section */
+        .actions-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-main);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .actions-title {
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-muted);
+            letter-spacing: 1.5px;
+            margin-bottom: 14px;
+        }
+
+        .actions-row {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .action-btn .sub {
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+            opacity: 0.85;
+            margin-top: 2px;
+        }
+
+        .action-btn.fold-btn { background: var(--fold-bg); color: var(--text-white); }
+        .action-btn.call-btn { background: var(--call-bg); color: #1a1a1a; }
+        .action-btn.check-btn { background: var(--check-bg); color: var(--text-white); }
+        .action-btn.raise-btn { background: linear-gradient(180deg, #ffb833 0%, #cc9000 100%); color: #1a1a1a; }
+        .action-btn.raise-alt-btn { background: linear-gradient(180deg, #ff7070 0%, #cc4545 100%); color: var(--text-white); }
+
+        .action-btn.has-node {
+            border-color: var(--cyan);
+            box-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .actions-hint {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 12px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .actions-hint .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--cyan);
+            border-radius: 50%;
+        }
+
+        /* --- Right Column --- */
+        .right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        .freq-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-main);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .freq-title {
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+
+        .freq-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .freq-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .freq-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+        }
+
+        .freq-color.fold { background: var(--fold-bg); }
+        .freq-color.call { background: var(--call-bg); }
+        .freq-color.raise { background: var(--raise-bg); }
+        .freq-color.raise-alt { background: var(--orange-dark); }
+        .freq-color.check { background: var(--check-bg); }
+
+        .freq-label { flex: 1; font-size: 13px; color: var(--text-gray); }
+        .freq-value { font-size: 14px; font-weight: 700; }
+
+        .freq-value.fold { color: var(--text-gray); }
+        .freq-value.call { color: var(--green); }
+        .freq-value.raise { color: var(--coral); }
+        .freq-value.raise-alt { color: var(--orange); }
+        .freq-value.check { color: var(--check-bg); }
+
+        /* Hand Details */
+        .hand-details {
+            background: var(--bg-card);
+            border: 1px solid var(--border-main);
+            border-radius: 8px;
+            padding: 16px;
+            display: none;
+        }
+        .hand-details.visible { display: block; }
+
+        .hand-details-title {
+            font-size: 11px;
+            color: var(--cyan);
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .hand-details-name {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .hand-ev-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            background: var(--bg-cell);
+            border-radius: 4px;
+            margin-bottom: 6px;
+        }
+
+        .hand-ev-action { font-size: 13px; color: var(--text-gray); }
+        .hand-ev-value { font-weight: 600; }
+        .hand-ev-value.positive { color: var(--green); }
+        .hand-ev-value.negative { color: var(--coral); }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-layout { grid-template-columns: 1fr; }
+            .left-col, .right-col { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ===== TELA 1: HOME ===== -->
+    <div class="home-screen" id="homeScreen">
+        <div class="logo">CEREBRO</div>
+        <div class="subtitle">VISUALIZADOR DE RANGES MTT</div>
+        <div class="category-grid">
+            <div class="category-card disabled">
+                <div class="icon">💰</div>
+                <div class="name">PKO</div>
+                <div class="status">Em breve</div>
+            </div>
+            <div class="category-card active" onclick="showPhaseScreen()">
+                <div class="icon">🎯</div>
+                <div class="name">VANILLA</div>
+                <div class="status">✓ Disponível</div>
+            </div>
+            <div class="category-card disabled">
+                <div class="icon">🎮</div>
+                <div class="name">Drill</div>
+                <div class="status">Em breve</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TELA 2: FASES ===== -->
+    <div class="phase-screen" id="phaseScreen">
+        <div class="phase-header">
+            <button class="back-btn-simple" onclick="showHomeScreen()">← Voltar</button>
+            <div>
+                <div class="phase-title">Selecione a Fase</div>
+                <div class="phase-subtitle">VANILLA • MTT 7-max</div>
+            </div>
+        </div>
+        <div class="phase-content">
+            <div class="phase-section">
+                <div class="section-title">cEV (Chip EV)</div>
+                <div class="phase-grid">
+                    <div class="phase-card disabled">
+                        <span class="phase-icon">💎</span>
+                        <span class="phase-name">CEV - DIAMOND SYMMETRIC</span>
+                        <span class="phase-badge badge-soon">SOON</span>
+                    </div>
+                    <div class="phase-card active" onclick="showVisualizer()">
+                        <span class="phase-icon">⏱️</span>
+                        <span class="phase-name">CEV - SYMMETRIC</span>
+                        <span class="phase-badge badge-spots">668 spots</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TELA 3: VISUALIZADOR ===== -->
+    <div class="app-container" id="appContainer">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <div class="logo-icon">🧠</div>
+                <div>
+                    <div class="logo-text">CEREBRO</div>
+                    <div class="logo-subtitle">VANILLA MTT • <span>Texas Hold'em</span></div>
+                </div>
+            </div>
+            <div class="header-center">
+                <div class="stat-box">
+                    <div class="stat-number">668</div>
+                    <div class="stat-label">SPOTS</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">17</div>
+                    <div class="stat-label">STACKS</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">7</div>
+                    <div class="stat-label">POSIÇÕES</div>
+                </div>
+            </div>
+            <button class="btn-menu" onclick="showPhaseScreen()">← Menu Principal</button>
+        </div>
+
+        <!-- Stack Selector -->
+        <div class="stack-selector" id="stackSelector"></div>
+
+        <!-- Breadcrumb -->
+        <div class="breadcrumb-bar">
+            <button class="btn-back" onclick="goBack()">← Voltar</button>
+            <div class="breadcrumb-tag" id="heroBadge">?</div>
+            <div class="breadcrumb-path" id="breadcrumbPath"></div>
+        </div>
+
+        <!-- Main Layout -->
+        <main class="main-layout">
+            <!-- Left Column -->
+            <div class="left-col">
+                <div class="mesa-title">MESA 7-MAX</div>
+                <div class="mesa-wrapper">
+                    <div class="mesa-oval">
+                        <div class="mesa-type">MTT 7-MAX</div>
+                        <div class="mesa-blinds">0.5bb / 1bb</div>
+                        <div class="mesa-blinds-label">Blinds</div>
+                    </div>
+                    <!-- Seats -->
+                    <div class="seat" data-pos="0" onclick="selectPosition(0)">
+                        <div class="seat-box">
+                            <div class="seat-pos">EP</div>
+                            <div class="seat-stack">100BB</div>
+                        </div>
+                    </div>
+                    <div class="seat" data-pos="1" onclick="selectPosition(1)">
+                        <div class="seat-box">
+                            <div class="seat-pos">MP</div>
+                            <div class="seat-stack">100BB</div>
+                        </div>
+                    </div>
+                    <div class="seat" data-pos="2" onclick="selectPosition(2)">
+                        <div class="seat-box">
+                            <div class="seat-pos">HJ</div>
+                            <div class="seat-stack">100BB</div>
+                        </div>
+                    </div>
+                    <div class="seat" data-pos="3" onclick="selectPosition(3)">
+                        <div class="seat-box">
+                            <div class="seat-pos">CO</div>
+                            <div class="seat-stack">100BB</div>
+                        </div>
+                    </div>
+                    <div class="seat" data-pos="4" onclick="selectPosition(4)">
+                        <div class="seat-box">
+                            <div class="seat-pos">BTN</div>
+                            <div class="seat-stack">100BB</div>
+                        </div>
+                        <div class="dealer-chip">D</div>
+                    </div>
+                    <div class="seat" data-pos="5" onclick="selectPosition(5)">
+                        <div class="seat-box">
+                            <div class="seat-pos">SB</div>
+                            <div class="seat-stack">100BB</div>
+                        </div>
+                    </div>
+                    <div class="seat" data-pos="6" onclick="selectPosition(6)">
+                        <div class="seat-box">
+                            <div class="seat-pos">BB</div>
+                            <div class="seat-stack">100BB</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mesa-hint">💡 Clique em qualquer posição para ver seu <span class="highlight">RFI</span></div>
+
+                <!-- Stats -->
+                <div class="stats-section">
+                    <div class="stats-title">STATS • <span id="statsPosition">-</span></div>
+                    <div class="stats-row">
+                        <div class="stats-card">
+                            <div class="stats-card-label">FOLD</div>
+                            <div class="stats-card-value fold" id="statFold">-</div>
+                        </div>
+                        <div class="stats-card">
+                            <div class="stats-card-label">CALL</div>
+                            <div class="stats-card-value call" id="statCall">-</div>
+                        </div>
+                        <div class="stats-card">
+                            <div class="stats-card-label">RAISE</div>
+                            <div class="stats-card-value raise" id="statRaise">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Column -->
+            <div class="center-col">
+                <div class="range-header">
+                    <span class="range-stack-label" id="rangeStackLabel">100BB</span>
+                    <span class="range-title">Range: <span id="rangePosition">-</span></span>
+                </div>
+
+                <div class="range-container">
+                    <div class="range-grid" id="rangeGrid"></div>
+                </div>
+
+                <div class="actions-section">
+                    <div class="actions-title">AÇÕES DISPONÍVEIS</div>
+                    <div class="actions-row" id="actionsRow"></div>
+                    <div class="actions-hint">
+                        <span class="dot"></span>
+                        <span>Borda azul = próximo nó disponível</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="right-col">
+                <div class="freq-section">
+                    <div class="freq-title">FREQUÊNCIAS DO RANGE</div>
+                    <div class="freq-list" id="freqList"></div>
+                </div>
+
+                <div class="hand-details" id="handDetails">
+                    <div class="hand-details-title">DETALHES DA MÃO</div>
+                    <div class="hand-details-name" id="handName">-</div>
+                    <div id="handEvList"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- SPOTS DATA -->
+    <script src="data/spots.js"></script>
+
+    <!-- APP LOGIC -->
+    <script>
+        // ==================== CONSTANTS ====================
+        const POSITIONS = ['EP', 'MP', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
+        const POSITION_LETTERS = ['U', 'H', 'C', 'B', 'S', 'D', 'X'];
+        const STACKS = [5, 6, 7, 8, 9, 10, 12, 15, 17, 20, 25, 30, 35, 40, 50, 75, 100];
+        const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+
+        // ==================== STATE ====================
+        let currentStack = 100;
+        let currentSpot = null;
+        let selectedHand = null;
+        let navigationPath = [];
+
+        // ==================== NAVIGATION ====================
+        function showHomeScreen() {
+            document.getElementById('homeScreen').classList.remove('hidden');
+            document.getElementById('phaseScreen').classList.remove('visible');
+            document.getElementById('appContainer').classList.remove('visible');
+        }
+
+        function showPhaseScreen() {
+            document.getElementById('homeScreen').classList.add('hidden');
+            document.getElementById('phaseScreen').classList.add('visible');
+            document.getElementById('appContainer').classList.remove('visible');
+        }
+
+        function showVisualizer() {
+            document.getElementById('homeScreen').classList.add('hidden');
+            document.getElementById('phaseScreen').classList.remove('visible');
+            document.getElementById('appContainer').classList.add('visible');
+            initVisualizer();
+        }
+
+        function goBack() {
+            if (navigationPath.length > 1) {
+                navigationPath.pop();
+                const prev = navigationPath[navigationPath.length - 1];
+                currentSpot = SPOTS_DATA[prev.key];
+                updateDisplay();
+            } else {
+                resetToInitialState();
+            }
+        }
+
+        // ==================== INIT ====================
+        function initVisualizer() {
+            renderStackBar();
+            renderRangeGrid();
+            updateStacks();
+            resetToInitialState();
+        }
+
+        function renderStackBar() {
+            const bar = document.getElementById('stackSelector');
+            bar.innerHTML = STACKS.map(s =>
+                `<button class="stack-btn ${s === currentStack ? 'active' : ''}" onclick="selectStack(${s})">${s}BB</button>`
+            ).join('');
+        }
+
+        function selectStack(stack) {
+            currentStack = stack;
+            renderStackBar();
+            updateStacks();
+            resetToInitialState();
+        }
+
+        function updateStacks() {
+            document.querySelectorAll('.seat-stack').forEach(el => {
+                el.textContent = `${currentStack}BB`;
+            });
+            document.getElementById('rangeStackLabel').textContent = `${currentStack}BB`;
+        }
+
+        // ==================== RANGE GRID ====================
+        function renderRangeGrid() {
+            const grid = document.getElementById('rangeGrid');
+            grid.innerHTML = '';
+            for (let i = 0; i < 13; i++) {
+                for (let j = 0; j < 13; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    let hand;
+                    if (i === j) hand = RANKS[i] + RANKS[j];
+                    else if (i < j) hand = RANKS[i] + RANKS[j] + 's';
+                    else hand = RANKS[j] + RANKS[i] + 'o';
+                    cell.textContent = hand;
+                    cell.dataset.hand = hand;
+                    cell.onclick = () => selectHandCell(hand);
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        function selectHandCell(hand) {
+            document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
+            const cell = document.querySelector(`[data-hand="${hand}"]`);
+            if (cell) cell.classList.add('selected');
+            selectedHand = hand;
+            showHandDetails(hand);
+        }
+
+        function showHandDetails(hand) {
+            const panel = document.getElementById('handDetails');
+            if (!currentSpot || !currentSpot.h || !currentSpot.h[hand]) {
+                panel.classList.remove('visible');
+                return;
+            }
+            const hd = currentSpot.h[hand];
+            const actions = currentSpot.a || [];
+            document.getElementById('handName').textContent = hand;
+            document.getElementById('handEvList').innerHTML = actions.map((a, i) => {
+                const ev = hd.evs[i] || 0;
+                const freq = ((hd.played[i] || 0) * 100).toFixed(0);
+                const evClass = ev > 0 ? 'positive' : 'negative';
+                return `<div class="hand-ev-item">
+                    <span class="hand-ev-action">${getActionLabel(a)} (${freq}%)</span>
+                    <span class="hand-ev-value ${evClass}">${ev > 0 ? '+' : ''}${ev.toFixed(2)} BB</span>
+                </div>`;
+            }).join('');
+            panel.classList.add('visible');
+        }
+
+        // ==================== POSITION SELECTION ====================
+        function selectPosition(pos) {
+            resetToInitialState();
+            const key = `${currentStack}BB_${POSITION_LETTERS[pos]}_`;
+            currentSpot = SPOTS_DATA[key];
+            if (!currentSpot) {
+                document.getElementById('rangePosition').textContent = 'Não disponível';
+                return;
+            }
+            navigationPath = [{ key, position: pos, action: 'RFI' }];
+
+            // Mark hero and folds
+            document.querySelectorAll('.seat').forEach(s => s.classList.remove('hero', 'folded'));
+            document.querySelector(`.seat[data-pos="${pos}"]`).classList.add('hero');
+            for (let i = 0; i < pos; i++) {
+                document.querySelector(`.seat[data-pos="${i}"]`).classList.add('folded');
+            }
+            updateDisplay();
+        }
+
+        // ==================== DISPLAY UPDATE ====================
+        function updateDisplay() {
+            if (!currentSpot) return;
+            const heroPos = POSITIONS[currentSpot.p];
+            document.getElementById('heroBadge').textContent = heroPos + ' ?';
+            document.getElementById('rangePosition').textContent = heroPos;
+            document.getElementById('statsPosition').textContent = heroPos;
+            updateBreadcrumb();
+            updateRangeGrid();
+            updateActions();
+            updateFrequencies();
+            updateStats();
+            document.getElementById('handDetails').classList.remove('visible');
+        }
+
+        function updateBreadcrumb() {
+            const container = document.getElementById('breadcrumbPath');
+            container.innerHTML = navigationPath.slice(1).map(item => {
+                const cls = item.action === 'Fold' ? 'fold' : 
+                           item.action === 'Call' ? 'call' : 
+                           item.action === 'Check' ? 'check' : 'raise';
+                return `<span class="path-item ${cls}">${item.action}</span>`;
+            }).join('<span style="color:#4a5a6a">→</span>');
+        }
+
+        function updateRangeGrid() {
+            document.querySelectorAll('.cell').forEach(cell => {
+                const hand = cell.dataset.hand;
+                const hd = currentSpot.h ? currentSpot.h[hand] : null;
+                if (!hd) {
+                    cell.style.background = '#3d4654';
+                    cell.style.color = '#4a5a6a';
+                    return;
+                }
+                const played = hd.played;
+                const actions = currentSpot.a || [];
+                
+                // Calculate color mix
+                let r = 61, g = 70, b = 84; // fold base
+                played.forEach((freq, idx) => {
+                    if (freq > 0 && actions[idx]) {
+                        const t = actions[idx].type;
+                        if (t === 'F') { /* keep fold color */ }
+                        else if (t === 'C') { r += (34 - 61) * freq; g += (197 - 70) * freq; b += (94 - 84) * freq; }
+                        else if (t === 'K') { r += (52 - 61) * freq; g += (152 - 70) * freq; b += (219 - 84) * freq; }
+                        else if (t === 'R') { 
+                            // First raise = coral, second = orange
+                            if (idx <= 1) {
+                                r += (232 - 61) * freq; g += (85 - 70) * freq; b += (85 - 84) * freq;
+                            } else {
+                                r += (212 - 61) * freq; g += (160 - 70) * freq; b += (23 - 84) * freq;
+                            }
+                        }
+                    }
+                });
+                cell.style.background = `rgb(${Math.min(255,Math.round(r))}, ${Math.min(255,Math.round(g))}, ${Math.min(255,Math.round(b))})`;
+                cell.style.color = '#fff';
+            });
+        }
+
+        // ==================== ACTIONS ====================
+        function updateActions() {
+            const row = document.getElementById('actionsRow');
+            if (!currentSpot || !currentSpot.a) {
+                row.innerHTML = '';
+                return;
+            }
+            row.innerHTML = currentSpot.a.map((a, i) => {
+                const label = getActionLabel(a);
+                const btnClass = getButtonClass(a, i);
+                const amount = a.amount ? formatAmount(a.amount) : '';
+                const hasNode = a.node ? 'has-node' : '';
+                return `<button class="action-btn ${btnClass} ${hasNode}" onclick="executeAction(${i})">
+                    <span>${label}</span>
+                    ${amount ? `<span class="sub">${amount}</span>` : ''}
+                </button>`;
+            }).join('');
+        }
+
+        function getActionLabel(a) {
+            if (a.type === 'F') return 'Fold';
+            if (a.type === 'K') return 'Check';
+            if (a.type === 'C') return 'Call';
+            if (a.type === 'R') return 'Raise';
+            return a.type;
+        }
+
+        function getButtonClass(a, idx) {
+            if (a.type === 'F') return 'fold-btn';
+            if (a.type === 'K') return 'check-btn';
+            if (a.type === 'C') return 'call-btn';
+            if (a.type === 'R') return idx > 1 ? 'raise-alt-btn' : 'raise-btn';
+            return 'fold-btn';
+        }
+
+        function formatAmount(amt) {
+            const bb = amt / 100000;
+            return bb >= 100 ? '100.00 (All)' : bb.toFixed(2) + ' BB';
+        }
+
+        function executeAction(idx) {
+            if (!currentSpot || !currentSpot.a || !currentSpot.a[idx]) return;
+            const a = currentSpot.a[idx];
+            const node = a.node;
+            if (!node) { 
+                alert('Fim da árvore'); 
+                return; 
+            }
+
+            // Find next spot by node
+            let nextKey = Object.keys(SPOTS_DATA).find(k => SPOTS_DATA[k]?.t === node);
+            
+            if (!nextKey) {
+                // Try building key
+                const ck = navigationPath[navigationPath.length - 1].key;
+                const letter = a.type === 'F' ? 'F' : a.type === 'C' ? 'C' : 'R';
+                const pk = ck.slice(0, -1) + letter + '_';
+                if (SPOTS_DATA[pk]) {
+                    nextKey = pk;
+                }
+            }
+
+            if (nextKey) {
+                loadSpot(nextKey, getActionLabel(a));
+            } else {
+                alert('Próximo nó não encontrado');
+            }
+        }
+
+        function loadSpot(key, actionLabel) {
+            currentSpot = SPOTS_DATA[key];
+            if (!currentSpot) return;
+            navigationPath.push({ key, position: currentSpot.p, action: actionLabel || 'Action' });
+            
+            // Update hero marker
+            document.querySelectorAll('.seat').forEach(s => s.classList.remove('hero'));
+            document.querySelector(`.seat[data-pos="${currentSpot.p}"]`).classList.add('hero');
+            updateDisplay();
+        }
+
+        // ==================== FREQUENCIES & STATS ====================
+        function updateFrequencies() {
+            const container = document.getElementById('freqList');
+            if (!currentSpot || !currentSpot.h) {
+                container.innerHTML = '';
+                return;
+            }
+            const actions = currentSpot.a || [];
+            const totals = actions.map(() => 0);
+            let count = 0;
+            Object.values(currentSpot.h).forEach(h => {
+                const w = h.weight || 1;
+                h.played.forEach((f, i) => totals[i] += f * w);
+                count += w;
+            });
+            container.innerHTML = actions.map((a, i) => {
+                const pct = count > 0 ? (totals[i] / count * 100).toFixed(1) : '0.0';
+                const colorClass = a.type === 'F' ? 'fold' : 
+                                  a.type === 'C' ? 'call' : 
+                                  a.type === 'K' ? 'check' : 
+                                  (i > 1 ? 'raise-alt' : 'raise');
+                return `<div class="freq-item">
+                    <div class="freq-color ${colorClass}"></div>
+                    <span class="freq-label">${getActionLabel(a)}</span>
+                    <span class="freq-value ${colorClass}">${pct}%</span>
+                </div>`;
+            }).join('');
+        }
+
+        function updateStats() {
+            if (!currentSpot || !currentSpot.h) {
+                document.getElementById('statFold').textContent = '-';
+                document.getElementById('statCall').textContent = '-';
+                document.getElementById('statRaise').textContent = '-';
+                return;
+            }
+            const actions = currentSpot.a || [];
+            const totals = actions.map(() => 0);
+            let count = 0;
+            Object.values(currentSpot.h).forEach(h => {
+                const w = h.weight || 1;
+                h.played.forEach((f, i) => totals[i] += f * w);
+                count += w;
+            });
+            let foldPct = 0, callPct = 0, raisePct = 0;
+            actions.forEach((a, i) => {
+                const pct = count > 0 ? totals[i] / count * 100 : 0;
+                if (a.type === 'F') foldPct += pct;
+                else if (a.type === 'C') callPct += pct;
+                else if (a.type === 'R' || a.type === 'K') raisePct += pct;
+            });
+            document.getElementById('statFold').textContent = foldPct.toFixed(0) + '%';
+            document.getElementById('statCall').textContent = callPct.toFixed(0) + '%';
+            document.getElementById('statRaise').textContent = raisePct.toFixed(0) + '%';
+        }
+
+        // ==================== RESET ====================
+        function resetToInitialState() {
+            currentSpot = null;
+            selectedHand = null;
+            navigationPath = [];
+            document.querySelectorAll('.seat').forEach(s => s.classList.remove('hero', 'folded'));
+            document.getElementById('heroBadge').textContent = '?';
+            document.getElementById('rangePosition').textContent = '-';
+            document.getElementById('statsPosition').textContent = '-';
+            document.getElementById('statFold').textContent = '-';
+            document.getElementById('statCall').textContent = '-';
+            document.getElementById('statRaise').textContent = '-';
+            document.getElementById('actionsRow').innerHTML = '';
+            document.getElementById('freqList').innerHTML = '';
+            document.getElementById('breadcrumbPath').innerHTML = '';
+            document.getElementById('handDetails').classList.remove('visible');
+            document.querySelectorAll('.cell').forEach(c => {
+                c.style.background = '#3d4654';
+                c.style.color = '#4a5a6a';
+                c.classList.remove('selected');
+            });
+        }
+    </script>
+</body>
+</html>
