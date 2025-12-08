@@ -253,8 +253,8 @@ body {
 .stack-bar {
     display: flex;
     justify-content: center;
-    gap: 6px;
-    padding: 8px 20px;
+    gap: 8px;
+    padding: 12px 20px;
     background: #0b1929;
     border-bottom: 1px solid #1a3550;
 }
@@ -263,12 +263,12 @@ body {
     background: transparent;
     border: 1px solid #2a4a6a;
     color: #5a7a9a;
-    padding: 4px 10px;
+    padding: 6px 14px;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.7rem;
+    font-size: 1.05rem;
     transition: all 0.2s;
-    min-width: 38px;
+    min-width: 50px;
 }
 .stack-btn:hover { border-color: #00d4ff; color: #00d4ff; }
 .stack-btn.active {
