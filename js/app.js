@@ -315,22 +315,68 @@ function formatAmount(amt) {
 function executeAction(idx) {
     if (!currentSpot || !currentSpot.a || !currentSpot.a[idx]) return;
     
-    const a = currentSpot.a[idx];
-    const node = a.node;
+    const action = currentSpot.a[idx];
+    const actionType = action.type; // F, C, R, K
     
-    if (!node) {
-        alert('Fim da árvore de decisão');
+    // Parse a chave atual: {stack}BB_{posLetter}_{history}
+    const match = currentSpotKey.match(/^(\d+)BB_([UHCBSDX])_(.*)$/);
+    if (!match) {
+        alert('Erro: chave inválida');
         return;
     }
     
-    // Buscar próximo spot pelo node
-    let nextKey = Object.keys(SPOTS_DATA).find(k => SPOTS_DATA[k]?.t === node);
+    const [, stack, posLetter, history] = match;
+    const newHistory = history + actionType;
+    
+    // Tentar encontrar próximo spot em ordem de posições
+    // Ordem: U(0)->H(1)->C(2)->B(3)->S(4)->D(5)->X(6)->U(0)...
+    const currentPosIdx = POSITION_LETTERS.indexOf(posLetter);
+    let nextKey = null;
+    
+    for (let offset = 1; offset <= 7; offset++) {
+        const nextPosIdx = (currentPosIdx + offset) % 7;
+        const nextPosLetter = POSITION_LETTERS[nextPosIdx];
+        const candidateKey = `${stack}BB_${nextPosLetter}_${newHistory}`;
+        
+        if (SPOTS_DATA[candidateKey]) {
+            nextKey = candidateKey;
+            break;
+        }
+    }
     
     if (nextKey) {
         loadSpot(nextKey);
     } else {
-        alert('Próximo nó não encontrado: ' + node);
+        // Fim da árvore para esta linha de ação
+        const actionName = getActionLabel(action);
+        showEndOfTree(actionName);
     }
+}
+
+function showEndOfTree(actionName) {
+    // Mostrar mensagem mais amigável
+    const msg = actionName === 'Fold' 
+        ? 'Você foldou. Selecione outra posição para continuar.'
+        : 'Fim da árvore de decisão para esta linha.';
+    
+    // Criar notificação visual em vez de alert
+    const notification = document.createElement('div');
+    notification.className = 'end-notification';
+    notification.innerHTML = `<span>${msg}</span>`;
+    notification.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.85);
+        color: #fff;
+        padding: 12px 24px;
+        border-radius: 8px;
+        z-index: 1000;
+        font-size: 14px;
+    `;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 2500);
 }
 
 function loadSpot(key) {
