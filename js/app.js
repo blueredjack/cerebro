@@ -276,9 +276,9 @@ function updateRangeGrid() {
                 // Quase 100% - bloco inteiro colorido
                 cell.style.background = color;
             } else {
-                // Frequência parcial - vertical (cinza em cima, cor embaixo)
+                // Frequência parcial - vertical (cinza à esquerda, cor à direita)
                 const stopPoint = (1 - freq) * 100;
-                cell.style.background = `linear-gradient(180deg, #2d3748 ${stopPoint}%, ${color} ${stopPoint}%)`;
+                cell.style.background = `linear-gradient(90deg, #2d3748 ${stopPoint}%, ${color} ${stopPoint}%)`;
             }
         } else {
             // Múltiplas ações (ex: raise + call mix)
@@ -289,7 +289,7 @@ function updateRangeGrid() {
             let gradientStops = [];
             let currentStop = 0;
             
-            // Área cinza (fold) primeiro no topo
+            // Área cinza (fold) primeiro à esquerda
             const foldFreq = 1 - totalActionFreq;
             if (foldFreq > 0.05) {
                 gradientStops.push(`#2d3748 ${foldFreq * 100}%`);
@@ -304,7 +304,7 @@ function updateRangeGrid() {
                 gradientStops.push(`${ac.hex} ${currentStop}%`);
             });
             
-            cell.style.background = `linear-gradient(180deg, ${gradientStops.join(', ')})`;
+            cell.style.background = `linear-gradient(90deg, ${gradientStops.join(', ')})`;
         }
         
         // Texto preto para melhor contraste
@@ -746,9 +746,9 @@ function updateRangeGridFiltered(actionIndex) {
             // Quase 100% - bloco inteiro colorido
             cell.style.background = hex;
         } else {
-            // Frequência parcial - vertical
+            // Frequência parcial - vertical (esquerda para direita)
             const stopPoint = (1 - freq) * 100;
-            cell.style.background = `linear-gradient(180deg, #2d3748 ${stopPoint}%, ${hex} ${stopPoint}%)`;
+            cell.style.background = `linear-gradient(90deg, #2d3748 ${stopPoint}%, ${hex} ${stopPoint}%)`;
         }
         
         cell.style.color = '#000';
