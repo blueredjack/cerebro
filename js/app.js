@@ -360,6 +360,9 @@ function getActionCategory(action, actionIndex, stack) {
         // All-in: quando o raise é >= 90% do stack
         if (pctStack >= 90) return 'ALLIN';
         
+        // Raises de 2.00, 2.50 ou 3.00 BB sempre AMARELO (RAISE_3)
+        if (bb >= 1.95 && bb <= 3.05) return 'RAISE_3';
+        
         // Categorizar por índice do raise no spot
         const raiseIndex = actionIndex - countNonRaises(actionIndex);
         if (raiseIndex <= 0) return 'RAISE_1';
