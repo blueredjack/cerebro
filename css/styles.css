@@ -605,7 +605,7 @@ body {
 .range-title span { color: #00d4ff; }
 
 /* ============================================
-   RANGE GRID 13x13 - CORES DA REFERÊNCIA
+   RANGE GRID 13x13 - FREQUÊNCIA VISUAL
    ============================================ */
 .range-grid {
     display: grid;
@@ -613,7 +613,9 @@ body {
     gap: 2px;
     max-width: 520px;
     width: 100%;
-    background: #0b1929;
+    background: #1a1a2e;
+    padding: 4px;
+    border-radius: 4px;
 }
 
 .hand-cell {
@@ -621,23 +623,26 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.6rem;
-    font-weight: 600;
-    border-radius: 2px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    border-radius: 3px;
     cursor: pointer;
-    transition: all 0.12s;
-    background: #3a4a5a;
-    color: #8a9aaa;
+    transition: transform 0.1s, box-shadow 0.1s;
+    background: #2d3748;
+    color: #4a5568;
+    text-shadow: none;
+    position: relative;
 }
 
 .hand-cell:hover {
-    transform: scale(1.15);
+    transform: scale(1.2);
     z-index: 10;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
 }
 
 .hand-cell.selected { 
-    border: 2px solid #fff; 
+    outline: 2px solid #fff;
+    outline-offset: 1px;
 }
 
 /* ============================================

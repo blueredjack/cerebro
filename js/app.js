@@ -229,32 +229,87 @@ function updateRangeGrid() {
         const hd = currentSpot && currentSpot.h ? currentSpot.h[hand] : null;
         
         if (!hd) {
-            cell.style.background = '#3a4a5a';
-            cell.style.color = '#7a8a9a';
+            // Mão não está no range - cinza escuro
+            cell.style.background = '#2d3748';
+            cell.style.color = '#4a5568';
+            cell.innerHTML = hand;
             return;
         }
         
         const played = hd.played || [];
         const actions = currentSpot.a || [];
         
-        // Base: cinza escuro azulado
-        let r = 58, g = 74, b = 90;
+        // Calcular frequência total de ações (não-fold)
+        let totalActionFreq = 0;
+        let actionColors = [];
         
         played.forEach((freq, idx) => {
             if (freq > 0 && actions[idx]) {
-                const category = getActionCategory(actions[idx], idx, currentStack);
-                const colors = ACTION_COLORS[category]?.grid;
-                
-                if (colors) {
-                    r += colors.r * freq;
-                    g += colors.g * freq;
-                    b += colors.b * freq;
+                const actionType = actions[idx].type;
+                if (actionType !== 'F') {
+                    const category = getActionCategory(actions[idx], idx, currentStack);
+                    const hex = ACTION_COLORS[category]?.hex || '#f97316';
+                    actionColors.push({ freq, hex, type: actionType });
+                    totalActionFreq += freq;
                 }
             }
         });
         
-        cell.style.background = `rgb(${Math.min(255,Math.max(0,Math.round(r)))}, ${Math.min(255,Math.max(0,Math.round(g)))}, ${Math.min(255,Math.max(0,Math.round(b)))})`;
-        cell.style.color = '#fff';
+        // Se 100% fold ou sem ação, mostrar cinza
+        if (totalActionFreq === 0) {
+            cell.style.background = '#2d3748';
+            cell.style.color = '#4a5568';
+            cell.innerHTML = hand;
+            return;
+        }
+        
+        // Criar visualização com blocos divididos diagonalmente
+        // Usar gradiente CSS para simular a divisão
+        
+        if (actionColors.length === 1) {
+            // Uma única ação (ex: 100% raise ou mix raise)
+            const color = actionColors[0].hex;
+            const freq = actionColors[0].freq;
+            
+            if (freq >= 0.95) {
+                // Quase 100% - bloco inteiro colorido
+                cell.style.background = color;
+            } else {
+                // Frequência parcial - diagonal
+                const angle = 135; // Diagonal do canto superior direito para inferior esquerdo
+                const stopPoint = (1 - freq) * 100;
+                cell.style.background = `linear-gradient(${angle}deg, #2d3748 ${stopPoint}%, ${color} ${stopPoint}%)`;
+            }
+        } else {
+            // Múltiplas ações (ex: raise + call mix)
+            // Ordenar por frequência (maior primeiro)
+            actionColors.sort((a, b) => b.freq - a.freq);
+            
+            // Criar gradiente com múltiplas cores
+            let gradientStops = [];
+            let currentStop = 0;
+            
+            // Área cinza (fold) primeiro
+            const foldFreq = 1 - totalActionFreq;
+            if (foldFreq > 0.05) {
+                gradientStops.push(`#2d3748 ${foldFreq * 100}%`);
+                currentStop = foldFreq * 100;
+            }
+            
+            // Adicionar cada cor de ação
+            actionColors.forEach((ac, i) => {
+                const startStop = currentStop;
+                currentStop += ac.freq * 100;
+                gradientStops.push(`${ac.hex} ${startStop}%`);
+                gradientStops.push(`${ac.hex} ${currentStop}%`);
+            });
+            
+            cell.style.background = `linear-gradient(135deg, ${gradientStops.join(', ')})`;
+        }
+        
+        // Texto preto para melhor contraste
+        cell.style.color = '#000';
+        cell.innerHTML = hand;
     });
 }
 
