@@ -216,53 +216,54 @@ function updateRangeGrid() {
         const hd = currentSpot && currentSpot.h ? currentSpot.h[hand] : null;
         
         if (!hd) {
-            cell.style.background = '#2d3748';
-            cell.style.color = '#6b7b8a';
+            cell.style.background = '#3a4a5a';
+            cell.style.color = '#7a8a9a';
             return;
         }
         
         const played = hd.played || [];
         const actions = currentSpot.a || [];
         
-        // Calcular cor baseada nas frequências - cores vibrantes como na imagem
-        let r = 45, g = 55, b = 72; // Base: cinza azulado escuro
+        // Cores IDÊNTICAS à imagem de referência
+        // Base: cinza escuro azulado
+        let r = 58, g = 74, b = 90;
         
         played.forEach((freq, idx) => {
             if (freq > 0 && actions[idx]) {
                 const t = actions[idx].type;
                 if (t === 'F') {
-                    // Fold: cinza médio
-                    r += 70 * freq;
-                    g += 80 * freq;
-                    b += 85 * freq;
+                    // Fold: cinza médio (aumenta levemente)
+                    r += 50 * freq;
+                    g += 60 * freq;
+                    b += 65 * freq;
                 } else if (t === 'C') {
                     // Call: verde
-                    r += -20 * freq;
-                    g += 140 * freq;
-                    b += 40 * freq;
+                    r += -30 * freq;
+                    g += 150 * freq;
+                    b += 50 * freq;
                 } else if (t === 'K') {
                     // Check: azul
-                    r += 20 * freq;
-                    g += 110 * freq;
-                    b += 160 * freq;
+                    r += 30 * freq;
+                    g += 120 * freq;
+                    b += 170 * freq;
                 } else if (t === 'R') {
-                    // Raise: coral vibrante (igual à imagem)
+                    // Raise: cores da imagem de referência
                     if (idx <= 1) {
-                        // Primeiro raise: coral/salmon vibrante
-                        r += 200 * freq;
-                        g += 85 * freq;
-                        b += 55 * freq;
+                        // Primeiro raise: coral/salmon (#e07a5f)
+                        r += 166 * freq;
+                        g += 48 * freq;
+                        b += 5 * freq;
                     } else {
-                        // Raise alternativo: laranja/amarelo
-                        r += 220 * freq;
-                        g += 150 * freq;
-                        b += 30 * freq;
+                        // Raise alternativo: amarelo/laranja (#f0b030)
+                        r += 182 * freq;
+                        g += 102 * freq;
+                        b += -42 * freq;
                     }
                 }
             }
         });
         
-        cell.style.background = `rgb(${Math.min(255,Math.round(r))}, ${Math.min(255,Math.round(g))}, ${Math.min(255,Math.round(b))})`;
+        cell.style.background = `rgb(${Math.min(255,Math.max(0,Math.round(r)))}, ${Math.min(255,Math.max(0,Math.round(g)))}, ${Math.min(255,Math.max(0,Math.round(b)))})`;
         cell.style.color = '#fff';
     });
 }
