@@ -336,15 +336,13 @@ function updateActions() {
 // === SISTEMA DE CORES UNIFICADO ===
 // Cores padronizadas por tipo de ação (independente de stack)
 const ACTION_COLORS = {
-    FOLD:     { btn: 'btn-fold',     hex: '#4a5568' },  // Cinza escuro
+    FOLD:     { btn: 'btn-fold',     hex: '#4a5568' },  // Cinza
     CHECK:    { btn: 'btn-check',    hex: '#3b82f6' },  // Azul
-    CALL:     { btn: 'btn-call',     hex: '#00bfff' },  // Ciano (Call)
-    RAISE_1:  { btn: 'btn-raise-1',  hex: '#0066ff' },  // Azul forte (Raise 5.00 BB)
-    RAISE_2:  { btn: 'btn-raise-2',  hex: '#00ff00' },  // Verde limão (Raise 7.00 BB)
-    RAISE_3:  { btn: 'btn-raise-3',  hex: '#ffff00' },  // Amarelo (Raise 9.00 BB)
-    RAISE_4:  { btn: 'btn-raise-4',  hex: '#ff00ff' },  // Magenta (Raise 12.00 BB)
-    RAISE_5:  { btn: 'btn-raise-5',  hex: '#00ffff' },  // Ciano claro (Raise adicional)
-    RAISE_6:  { btn: 'btn-raise-6',  hex: '#ff8c00' },  // Laranja (Raise 35.00 BB)
+    CALL:     { btn: 'btn-call',     hex: '#00bfff' },  // Ciano
+    RAISE_1:  { btn: 'btn-raise-1',  hex: '#ffff00' },  // Amarelo (primeiro raise)
+    RAISE_2:  { btn: 'btn-raise-2',  hex: '#00ff00' },  // Verde (segundo raise)
+    RAISE_3:  { btn: 'btn-raise-3',  hex: '#9333ea' },  // Roxo (terceiro raise)
+    RAISE_4:  { btn: 'btn-raise-4',  hex: '#f9a8d4' },  // Rosa bebê (quarto raise)
     ALLIN:    { btn: 'btn-allin',    hex: '#dc2626' }   // Vermelho (All-in)
 };
 
@@ -360,17 +358,12 @@ function getActionCategory(action, actionIndex, stack) {
         // All-in: quando o raise é >= 90% do stack
         if (pctStack >= 90) return 'ALLIN';
         
-        // Raises de 2.00, 2.50, 3.00, 3.80 ou 5.00 BB sempre AMARELO (RAISE_3)
-        if ((bb >= 1.95 && bb <= 3.05) || (bb >= 3.75 && bb <= 3.85) || (bb >= 4.95 && bb <= 5.05)) return 'RAISE_3';
-        
         // Categorizar por índice do raise no spot
         const raiseIndex = actionIndex - countNonRaises(actionIndex);
-        if (raiseIndex <= 0) return 'RAISE_1';
-        if (raiseIndex === 1) return 'RAISE_2';
-        if (raiseIndex === 2) return 'RAISE_3';
-        if (raiseIndex === 3) return 'RAISE_4';
-        if (raiseIndex === 4) return 'RAISE_5';
-        return 'RAISE_6';
+        if (raiseIndex <= 0) return 'RAISE_1';  // Primeiro raise - Amarelo
+        if (raiseIndex === 1) return 'RAISE_2'; // Segundo raise - Verde
+        if (raiseIndex === 2) return 'RAISE_3'; // Terceiro raise - Roxo
+        return 'RAISE_4';                        // Quarto+ raise - Rosa bebê
     }
     
     return 'FOLD';

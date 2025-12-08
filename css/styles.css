@@ -811,34 +811,24 @@ body {
     background: linear-gradient(135deg, #3b82f6, #2563eb); 
     color: #fff; 
 }
-/* Raise 1 - Azul forte */
+/* Raise 1 - Amarelo (primeiro raise) */
 .btn-raise-1 { 
-    background: linear-gradient(135deg, #0066ff, #0052cc); 
-    color: #fff; 
+    background: linear-gradient(135deg, #ffff00, #e6e600); 
+    color: #000; 
 }
-/* Raise 2 - Verde limão */
+/* Raise 2 - Verde (segundo raise) */
 .btn-raise-2 { 
     background: linear-gradient(135deg, #00ff00, #00cc00); 
     color: #000; 
 }
-/* Raise 3 - Amarelo */
+/* Raise 3 - Roxo (terceiro raise) */
 .btn-raise-3 { 
-    background: linear-gradient(135deg, #ffff00, #cccc00); 
-    color: #000; 
-}
-/* Raise 4 - Magenta */
-.btn-raise-4 { 
-    background: linear-gradient(135deg, #ff00ff, #cc00cc); 
+    background: linear-gradient(135deg, #9333ea, #7c3aed); 
     color: #fff; 
 }
-/* Raise 5 - Ciano claro */
-.btn-raise-5 { 
-    background: linear-gradient(135deg, #00ffff, #00cccc); 
-    color: #000; 
-}
-/* Raise 6 - Laranja */
-.btn-raise-6 { 
-    background: linear-gradient(135deg, #ff8c00, #cc7000); 
+/* Raise 4 - Rosa bebê (quarto raise) */
+.btn-raise-4 { 
+    background: linear-gradient(135deg, #f9a8d4, #f472b6); 
     color: #000; 
 }
 /* All-in - Vermelho com destaque */
@@ -850,8 +840,8 @@ body {
 }
 /* Compatibilidade com código antigo */
 .btn-raise { 
-    background: linear-gradient(135deg, #0066ff, #0052cc); 
-    color: #fff; 
+    background: linear-gradient(135deg, #ffff00, #e6e600); 
+    color: #000; 
 }
 .btn-raise-alt { 
     background: linear-gradient(135deg, #ffd60a, #e6c200); 
