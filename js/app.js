@@ -96,6 +96,10 @@ function updateStacks() {
         if (el) el.textContent = `${currentStack}BB`;
     }
     document.getElementById('rangeStackLabel').textContent = `${currentStack}BB`;
+    
+    // Atualizar label do stack na mesa
+    const mesaLabel = document.getElementById('mesaStackLabel');
+    if (mesaLabel) mesaLabel.textContent = `${currentStack}BB`;
 }
 
 // === RANGE GRID ===
@@ -428,10 +432,17 @@ function showEmptySpot(posIdx, history, context) {
     
     const heroPos = POSITIONS[posIdx];
     
-    // Atualizar UI
-    document.querySelectorAll('.seat').forEach(s => s.classList.remove('hero'));
+    // Limpar todos os estados e marcar hero
+    document.querySelectorAll('.seat').forEach(s => s.classList.remove('hero', 'folded', 'acted'));
     const seat = document.querySelector(`.seat-${heroPos.toLowerCase()}`);
     if (seat) seat.classList.add('hero');
+    
+    // Marcar posições que foldaram baseado no histórico
+    const foldedPositions = getFoldedPositionsFromHistory(history, posIdx);
+    foldedPositions.forEach(foldedIdx => {
+        const foldedSeat = document.querySelector(`.seat-${POSITIONS[foldedIdx].toLowerCase()}`);
+        if (foldedSeat) foldedSeat.classList.add('folded');
+    });
     
     document.getElementById('heroBadge').textContent = heroPos + ' ?';
     document.getElementById('rangePosition').textContent = heroPos;
@@ -488,16 +499,83 @@ function loadSpot(key) {
     
     navigationPath.push({ key, position: currentSpot.p });
     
-    // Atualizar hero na mesa
-    document.querySelectorAll('.seat').forEach(s => s.classList.remove('hero'));
-    const heroIdx = currentSpot.p !== undefined ? currentSpot.p : 0;
+    // Atualizar mesa visualmente
+    updateTableDisplay(key);
+    
+    updateDisplay();
+}
+
+// Atualiza a visualização da mesa (hero, folded, etc)
+function updateTableDisplay(key) {
+    if (!key) return;
+    
+    const match = key.match(/^(\d+)BB_([UHCBSDX])_(.*)$/);
+    if (!match) return;
+    
+    const [, stack, posLetter, history] = match;
+    const heroIdx = POSITION_LETTERS.indexOf(posLetter);
+    
+    // Limpar todos os estados
+    document.querySelectorAll('.seat').forEach(s => s.classList.remove('hero', 'folded', 'acted'));
+    
+    // Marcar hero
     const heroPos = POSITIONS[heroIdx];
     if (heroPos) {
         const seat = document.querySelector(`.seat-${heroPos.toLowerCase()}`);
         if (seat) seat.classList.add('hero');
     }
     
-    updateDisplay();
+    // Analisar histórico para marcar folded/acted
+    // Histórico começa da posição 0 (EP) e avança
+    let actionIdx = 0;
+    
+    // Para spots RFI, o histórico indica quem foldou antes
+    if (isRFISpot(key)) {
+        // Contar Fs no início = posições que foldaram
+        for (let i = 0; i < history.length && history[i] === 'F'; i++) {
+            const foldedSeat = document.querySelector(`.seat-${POSITIONS[i].toLowerCase()}`);
+            if (foldedSeat) foldedSeat.classList.add('folded');
+        }
+    } else {
+        // Para spots não-RFI, analisar o histórico completo
+        // Cada letra representa uma ação de uma posição em sequência
+        const foldedPositions = getFoldedPositionsFromHistory(history, heroIdx);
+        foldedPositions.forEach(posIdx => {
+            const seat = document.querySelector(`.seat-${POSITIONS[posIdx].toLowerCase()}`);
+            if (seat) seat.classList.add('folded');
+        });
+    }
+}
+
+// Analisa o histórico e retorna quais posições foldaram
+function getFoldedPositionsFromHistory(history, currentPosIdx) {
+    const folded = [];
+    
+    // Primeiro, identificar o padrão base
+    // Se começa com R, alguém abriu
+    // Cada F subsequente é um fold de quem estava agindo
+    
+    let posIdx = 0; // Começa do EP
+    
+    for (let i = 0; i < history.length; i++) {
+        const action = history[i];
+        
+        if (action === 'F') {
+            // Esta posição foldou
+            if (posIdx < 7 && posIdx !== currentPosIdx) {
+                folded.push(posIdx);
+            }
+            posIdx = (posIdx + 1) % 7;
+        } else if (action === 'R') {
+            // Raise - posição agiu mas não foldou
+            posIdx = (posIdx + 1) % 7;
+        } else if (action === 'C') {
+            // Call - posição agiu mas não foldou
+            posIdx = (posIdx + 1) % 7;
+        }
+    }
+    
+    return folded;
 }
 
 // === FREQUÊNCIAS E STATS ===
