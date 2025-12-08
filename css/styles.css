@@ -351,30 +351,30 @@ body {
 }
 
 /* ============================================
-   MESA DE POKER - RESPONSIVA
+   MESA DE POKER - IGUAL À IMAGEM DE REFERÊNCIA
    ============================================ */
 .mesa-container {
     position: relative;
     width: 100%;
-    max-width: 320px;
-    aspect-ratio: 1.15;
+    max-width: 340px;
+    aspect-ratio: 1;
     margin: 0 auto;
 }
 
-/* Mesa oval horizontal - igual à imagem */
+/* Mesa oval horizontal - azul escuro com borda cyan */
 .mesa-oval {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 65%;
-    height: 45%;
-    background: linear-gradient(180deg, #0a2a40 0%, #051a2a 100%);
+    width: 75%;
+    height: 42%;
+    background: linear-gradient(180deg, #0d2d45 0%, #061a2a 100%);
     border-radius: 50%;
-    border: 2px solid #1a5a7a;
+    border: 2px solid #2a6a8a;
     box-shadow: 
-        0 0 30px rgba(0, 150, 200, 0.15),
-        inset 0 0 30px rgba(0, 100, 150, 0.1);
+        0 0 40px rgba(0, 100, 150, 0.2),
+        inset 0 0 40px rgba(0, 80, 120, 0.15);
 }
 
 .mesa-center {
@@ -383,30 +383,33 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     text-align: center;
+    white-space: nowrap;
 }
 
 .mesa-title { 
-    color: #3a7a9a; 
-    font-size: clamp(0.5rem, 0.7vw, 0.65rem); 
+    color: #4a8aaa; 
+    font-size: 0.6rem; 
     font-weight: 500; 
     letter-spacing: 2px; 
     text-transform: uppercase;
+    margin-bottom: 4px;
 }
 .mesa-blinds { 
-    color: #a0c0d0; 
-    font-size: clamp(1rem, 1.5vw, 1.4rem); 
-    font-weight: 300; 
-    margin: 5px 0 3px 0;
-    letter-spacing: 1px;
+    color: #c0d8e8; 
+    font-size: 1.3rem; 
+    font-weight: 400; 
+    margin: 2px 0;
+    letter-spacing: 0;
 }
 .mesa-blinds-label { 
-    color: #3a6a8a; 
-    font-size: clamp(0.45rem, 0.6vw, 0.55rem);
+    color: #4a7a9a; 
+    font-size: 0.5rem;
     letter-spacing: 1px;
+    text-transform: capitalize;
 }
 
 /* ============================================
-   SEATS - POSIÇÕES IDÊNTICAS À IMAGEM
+   SEATS - POSICIONAMENTO IGUAL À IMAGEM 2
    ============================================ */
 .seat {
     position: absolute;
@@ -417,112 +420,119 @@ body {
 
 .seat:hover .seat-box {
     border-color: #00d4ff;
-    box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
 }
 
 .seat-box {
-    background: linear-gradient(180deg, #1a2a3a 0%, #0f1a25 100%);
-    border: 2px solid #2a4a6a;
-    border-radius: 8px;
-    padding: 8px 14px;
-    min-width: 55px;
+    background: transparent;
+    border: 2px solid #3a5a7a;
+    border-radius: 6px;
+    padding: 8px 16px;
+    min-width: 58px;
     text-align: center;
     transition: all 0.2s;
 }
 
 .seat.hero .seat-box {
-    border-color: #f1c40f;
-    box-shadow: 0 0 20px rgba(241, 196, 15, 0.4);
-    background: linear-gradient(180deg, #2a3a4a 0%, #1a2a35 100%);
+    border-color: #00d4ff;
+    box-shadow: 0 0 25px rgba(0, 212, 255, 0.4);
+    background: rgba(0, 100, 150, 0.15);
 }
 
 .seat.folded .seat-box { 
-    opacity: 0.3; 
+    opacity: 0.25; 
 }
 
 /* Seat que já agiu (raised ou called) - destaque sutil */
 .seat.acted .seat-box {
     border-color: #3a8a5a;
-    background: linear-gradient(180deg, #1a3a2a 0%, #0f2a1a 100%);
+    background: rgba(50, 120, 80, 0.1);
 }
 
 .seat-position { 
-    font-size: 0.8rem; 
+    font-size: 0.85rem; 
     font-weight: 700; 
-    color: #fff; 
+    color: #00d4ff; 
     letter-spacing: 1px;
 }
+
+.seat.hero .seat-position {
+    color: #00d4ff;
+}
+
 .seat-stack { 
-    font-size: 0.65rem; 
-    color: #00bfff;
-    margin-top: 2px;
+    font-size: 0.7rem; 
+    color: #7a9aba;
+    margin-top: 3px;
+    font-weight: 500;
 }
 
 .dealer-btn {
     position: absolute;
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     background: linear-gradient(135deg, #f5a623, #e8940c);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.55rem;
+    font-size: 0.6rem;
     font-weight: 800;
     color: #000;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    border: 1px solid #ffd700;
 }
 
-/* === POSIÇÕES EXATAS DOS SEATS - IGUAL À IMAGEM === */
+/* === POSIÇÕES DOS SEATS - DISTRIBUIÇÃO OVAL === */
 /* EP - Topo centro */
 .seat-ep {
-    top: 0px;
+    top: 2%;
     left: 50%;
     transform: translateX(-50%);
 }
 
-/* BB - Topo esquerda (diagonal) */
+/* BB - Esquerda superior */
 .seat-bb {
-    top: 35px;
-    left: 15px;
+    top: 18%;
+    left: 5%;
 }
 
-/* MP - Topo direita (diagonal) */
+/* MP - Direita superior */
 .seat-mp {
-    top: 35px;
-    right: 15px;
+    top: 18%;
+    right: 5%;
 }
 
-/* SB - Meio esquerda */
+/* SB - Esquerda centro */
 .seat-sb {
     top: 50%;
-    left: 0px;
+    left: 0%;
     transform: translateY(-50%);
 }
 
-/* HJ - Meio direita */
+/* HJ - Direita centro */
 .seat-hj {
     top: 50%;
-    right: 0px;
+    right: 0%;
     transform: translateY(-50%);
 }
 
-/* BTN - Baixo esquerda (diagonal) */
+/* BTN - Esquerda inferior */
 .seat-btn {
-    bottom: 35px;
-    left: 45px;
+    bottom: 18%;
+    left: 12%;
 }
 
 .seat-btn .dealer-btn {
     top: 50%;
-    right: -22px;
+    right: -25px;
     transform: translateY(-50%);
 }
 
-/* CO - Baixo direita (diagonal) */
+/* CO - Direita inferior */
 .seat-co {
-    bottom: 35px;
-    right: 45px;
+    bottom: 18%;
+    right: 12%;
 }
 
 .mesa-hint {
