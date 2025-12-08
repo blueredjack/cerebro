@@ -342,6 +342,8 @@ const ACTION_COLORS = {
     RAISE_1:  { btn: 'btn-raise-1',  hex: '#e85d04' },  // Laranja forte/queimado
     RAISE_2:  { btn: 'btn-raise-2',  hex: '#ffd60a' },  // Amarelo vivo
     RAISE_3:  { btn: 'btn-raise-3',  hex: '#dc2626' },  // Vermelho
+    RAISE_4:  { btn: 'btn-raise-4',  hex: '#f472b6' },  // Rosa bebê
+    RAISE_5:  { btn: 'btn-raise-5',  hex: '#a855f7' },  // Roxo
     ALLIN:    { btn: 'btn-allin',    hex: '#9d174d' }   // Magenta escuro
 };
 
@@ -358,11 +360,12 @@ function getActionCategory(action, actionIndex, stack) {
         if (pctStack >= 90) return 'ALLIN';
         
         // Categorizar por índice do raise no spot
-        // Primeiro raise, segundo raise, etc.
         const raiseIndex = actionIndex - countNonRaises(actionIndex);
         if (raiseIndex <= 0) return 'RAISE_1';
         if (raiseIndex === 1) return 'RAISE_2';
-        return 'RAISE_3';
+        if (raiseIndex === 2) return 'RAISE_3';
+        if (raiseIndex === 3) return 'RAISE_4';
+        return 'RAISE_5';
     }
     
     return 'FOLD';

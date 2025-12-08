@@ -742,6 +742,16 @@ body {
     background: linear-gradient(135deg, #dc2626, #b91c1c); 
     color: #fff; 
 }
+/* Raise 4 - Quarto raise (rosa bebê) */
+.btn-raise-4 { 
+    background: linear-gradient(135deg, #f472b6, #ec4899); 
+    color: #fff; 
+}
+/* Raise 5 - Quinto raise (roxo) */
+.btn-raise-5 { 
+    background: linear-gradient(135deg, #a855f7, #9333ea); 
+    color: #fff; 
+}
 /* All-in - Magenta escuro com destaque */
 .btn-allin { 
     background: linear-gradient(135deg, #9d174d, #831843); 
