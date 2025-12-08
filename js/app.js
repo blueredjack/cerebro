@@ -13,16 +13,20 @@ const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
 // U=EP(0), H=MP(1), C=HJ(2), B=CO(3), S=BTN(4), D=SB(5), X=BB(6)
 const POS_MAP = { 'U': 0, 'H': 1, 'C': 2, 'B': 3, 'S': 4, 'D': 5, 'X': 6 };
 
-// Chaves RFI para cada posição (quando todos antes foldam)
-// EP: primeiro a agir, MP: EP fold, HJ: EP+MP fold, etc.
+// Padrões RFI por letra de posição
+const RFI_HISTORY = {
+    'U': 'R',       // EP: primeiro a agir (RFI)
+    'H': 'F',       // MP: EP foldou
+    'C': 'FF',      // HJ: EP+MP foldaram
+    'B': 'FFF',     // CO: EP+MP+HJ foldaram
+    'S': 'FFFF',    // BTN: todos antes foldaram
+    'D': 'FFFFF',   // SB: todos antes foldaram
+    'X': 'FFFFFC'   // BB: vs SB complete
+};
+
+// Versão antiga para compatibilidade
 const RFI_PATTERNS = {
-    0: '_R',      // EP: STACK_U_R
-    1: '_F',      // MP: STACK_H_F (EP fold)
-    2: '_FF',     // HJ: STACK_C_FF (EP+MP fold)
-    3: '_FFF',    // CO: STACK_B_FFF
-    4: '_FFFF',   // BTN: STACK_S_FFFF
-    5: '_FFFFF',  // SB: STACK_D_FFFFF
-    6: '_FFFFFC'  // BB: STACK_X_FFFFFC (SB completa)
+    0: '_R', 1: '_F', 2: '_FF', 3: '_FFF', 4: '_FFFF', 5: '_FFFFF', 6: '_FFFFFC'
 };
 
 // === ESTADO GLOBAL ===
@@ -312,54 +316,119 @@ function formatAmount(amt) {
     return bb.toFixed(2) + ' BB';
 }
 
-function executeAction(idx) {
-    if (!currentSpot || !currentSpot.a || !currentSpot.a[idx]) return;
-    
-    const action = currentSpot.a[idx];
-    const actionType = action.type; // F, C, R, K
-    
-    // Parse a chave atual: {stack}BB_{posLetter}_{history}
-    const match = currentSpotKey.match(/^(\d+)BB_([UHCBSDX])_(.*)$/);
-    if (!match) {
-        alert('Erro: chave inválida');
-        return;
-    }
+// === HELPERS DE NAVEGAÇÃO ===
+function isRFISpot(key) {
+    const match = key.match(/^(\d+)BB_([UHCBSDX])_(.*)$/);
+    if (!match) return false;
+    const [, , posLetter, history] = match;
+    return RFI_HISTORY[posLetter] === history;
+}
+
+function getNextSpotKey(currentKey, actionType) {
+    const match = currentKey.match(/^(\d+)BB_([UHCBSDX])_(.*)$/);
+    if (!match) return { key: null, nextPos: null, newHistory: null };
     
     const [, stack, posLetter, history] = match;
-    const newHistory = history + actionType;
+    const currentPosIdx = POSITION_LETTERS.indexOf(posLetter);
+    
+    let newHistory;
+    
+    if (isRFISpot(currentKey)) {
+        // Em spot RFI:
+        // F = não abre, passa o RFI pro próximo
+        // R = abre, próximo está facing raise
+        if (actionType === 'F') {
+            const nextPosIdx = (currentPosIdx + 1) % 7;
+            const nextPosLetter = POSITION_LETTERS[nextPosIdx];
+            newHistory = RFI_HISTORY[nextPosLetter];
+        } else {
+            newHistory = 'R';
+        }
+    } else {
+        // Não é RFI: adiciona ação ao histórico
+        newHistory = history + actionType;
+    }
     
     // Tentar encontrar próximo spot em ordem de posições
-    // Ordem: U(0)->H(1)->C(2)->B(3)->S(4)->D(5)->X(6)->U(0)...
-    const currentPosIdx = POSITION_LETTERS.indexOf(posLetter);
-    let nextKey = null;
-    
     for (let offset = 1; offset <= 7; offset++) {
         const nextPosIdx = (currentPosIdx + offset) % 7;
         const nextPosLetter = POSITION_LETTERS[nextPosIdx];
         const candidateKey = `${stack}BB_${nextPosLetter}_${newHistory}`;
         
         if (SPOTS_DATA[candidateKey]) {
-            nextKey = candidateKey;
-            break;
+            return { key: candidateKey, nextPos: nextPosIdx, newHistory };
         }
     }
     
-    if (nextKey) {
-        loadSpot(nextKey);
+    // Não encontrou spot, mas retorna info para mostrar tela vazia
+    const nextPosIdx = (currentPosIdx + 1) % 7;
+    return { key: null, nextPos: nextPosIdx, newHistory };
+}
+
+function executeAction(idx) {
+    if (!currentSpot || !currentSpot.a || !currentSpot.a[idx]) return;
+    
+    const action = currentSpot.a[idx];
+    const actionType = action.type;
+    
+    const result = getNextSpotKey(currentSpotKey, actionType);
+    
+    if (result.key) {
+        // Spot existe, carregar normalmente
+        loadSpot(result.key);
+    } else if (actionType === 'F' && isRFISpot(currentSpotKey)) {
+        // Fold no RFI: próxima posição assume RFI
+        const nextPosIdx = result.nextPos;
+        showEmptySpot(nextPosIdx, result.newHistory, 'RFI');
+    } else if (actionType === 'F') {
+        // Fold normal: fim da mão para este jogador
+        showEndOfTree('Fold');
     } else {
-        // Fim da árvore para esta linha de ação
-        const actionName = getActionLabel(action);
-        showEndOfTree(actionName);
+        // Spot não existe mas ação não é fold: mostrar tela vazia
+        showEmptySpot(result.nextPos, result.newHistory, actionType);
     }
 }
 
+function showEmptySpot(posIdx, history, context) {
+    // Limpar spot atual
+    currentSpot = null;
+    currentSpotKey = null;
+    
+    const heroPos = POSITIONS[posIdx];
+    
+    // Atualizar UI
+    document.querySelectorAll('.seat').forEach(s => s.classList.remove('hero'));
+    const seat = document.querySelector(`.seat-${heroPos.toLowerCase()}`);
+    if (seat) seat.classList.add('hero');
+    
+    document.getElementById('heroBadge').textContent = heroPos + ' ?';
+    document.getElementById('rangePosition').textContent = heroPos;
+    document.getElementById('statsPosition').textContent = heroPos;
+    
+    // Limpar grid (mostrar vazio)
+    document.querySelectorAll('.hand-cell').forEach(cell => {
+        cell.style.background = '#3a4a5a';
+        cell.style.color = '#7a8a9a';
+    });
+    
+    // Limpar ações e stats
+    document.getElementById('actionsRow').innerHTML = `
+        <div style="color: #7a8a9a; text-align: center; padding: 20px;">
+            Dados não disponíveis para este spot<br>
+            <small>Histórico: ${history}</small>
+        </div>`;
+    document.getElementById('freqList').innerHTML = '';
+    document.getElementById('statFold').textContent = '-';
+    document.getElementById('statCall').textContent = '-';
+    document.getElementById('statRaise').textContent = '-';
+    document.getElementById('handDetails').classList.remove('visible');
+}
+
 function showEndOfTree(actionName) {
-    // Mostrar mensagem mais amigável
     const msg = actionName === 'Fold' 
         ? 'Você foldou. Selecione outra posição para continuar.'
         : 'Fim da árvore de decisão para esta linha.';
     
-    // Criar notificação visual em vez de alert
     const notification = document.createElement('div');
     notification.className = 'end-notification';
     notification.innerHTML = `<span>${msg}</span>`;
