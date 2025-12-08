@@ -434,9 +434,9 @@ body {
 }
 
 .seat.hero .seat-box {
-    border-color: #00d4ff;
-    box-shadow: 0 0 25px rgba(0, 212, 255, 0.4);
-    background: rgba(0, 100, 150, 0.15);
+    border-color: #f1c40f;
+    box-shadow: 0 0 25px rgba(241, 196, 15, 0.5);
+    background: rgba(241, 196, 15, 0.08);
 }
 
 .seat.folded .seat-box { 
@@ -457,7 +457,7 @@ body {
 }
 
 .seat.hero .seat-position {
-    color: #00d4ff;
+    color: #f1c40f;
 }
 
 .seat-stack { 
@@ -483,44 +483,44 @@ body {
     border: 1px solid #ffd700;
 }
 
-/* === POSIÇÕES DOS SEATS - IGUAL À IMAGEM === */
-/* EP - Topo centro */
+/* === POSIÇÕES DOS SEATS - IGUAL À IMAGEM 1 === */
+/* EP - Topo centro, bem acima da mesa */
 .seat-ep {
-    top: 0%;
+    top: -5%;
     left: 50%;
     transform: translateX(-50%);
 }
 
-/* BB - Esquerda superior */
+/* BB - Esquerda superior, mais alto e mais para esquerda */
 .seat-bb {
-    top: 22%;
-    left: 0%;
+    top: 12%;
+    left: -8%;
 }
 
-/* MP - Direita superior */
+/* MP - Direita superior, espelho do BB */
 .seat-mp {
-    top: 22%;
-    right: 0%;
+    top: 12%;
+    right: -8%;
 }
 
-/* SB - Esquerda centro */
+/* SB - Esquerda centro, bem afastado */
 .seat-sb {
-    top: 50%;
-    left: -5%;
+    top: 45%;
+    left: -12%;
     transform: translateY(-50%);
 }
 
-/* HJ - Direita centro */
+/* HJ - Direita centro, espelho do SB */
 .seat-hj {
-    top: 50%;
-    right: -5%;
+    top: 45%;
+    right: -12%;
     transform: translateY(-50%);
 }
 
-/* BTN - Esquerda inferior */
+/* BTN - Esquerda inferior, abaixo da mesa */
 .seat-btn {
-    bottom: 12%;
-    left: 8%;
+    bottom: 5%;
+    left: -2%;
 }
 
 .seat-btn .dealer-btn {
@@ -529,10 +529,10 @@ body {
     transform: translateY(-50%);
 }
 
-/* CO - Direita inferior */
+/* CO - Direita inferior, espelho do BTN */
 .seat-co {
-    bottom: 12%;
-    right: 8%;
+    bottom: 5%;
+    right: -2%;
 }
 
 .mesa-hint {
