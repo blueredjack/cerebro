@@ -483,56 +483,55 @@ body {
     border: 1px solid #ffd700;
 }
 
-/* === POSIÇÕES DOS SEATS - PRÓXIMAS DA BORDA DA MESA === */
-/* EP - Topo centro, tocando a borda superior */
+/* === POSIÇÕES DOS SEATS - IGUAL À IMAGEM DE REFERÊNCIA === */
+
+/* EP - Topo centro */
 .seat-ep {
-    top: 8%;
+    top: 2%;
     left: 50%;
     transform: translateX(-50%);
 }
 
-/* BB - Esquerda superior */
+/* BB - Esquerda superior (diagonal) */
 .seat-bb {
-    top: 22%;
-    left: 5%;
+    top: 20%;
+    left: 2%;
 }
 
-/* MP - Direita superior, espelho do BB */
+/* MP - Direita superior (diagonal, espelho do BB) */
 .seat-mp {
-    top: 22%;
-    right: 5%;
+    top: 20%;
+    right: 2%;
 }
 
-/* SB - Esquerda centro */
+/* SB - Esquerda centro-inferior */
 .seat-sb {
-    top: 50%;
+    top: 55%;
     left: 0%;
-    transform: translateY(-50%);
 }
 
-/* HJ - Direita centro, espelho do SB */
+/* HJ - Direita centro-inferior (espelho do SB) */
 .seat-hj {
-    top: 50%;
+    top: 55%;
     right: 0%;
-    transform: translateY(-50%);
 }
 
-/* BTN - Esquerda inferior */
+/* BTN - Baixo esquerda */
 .seat-btn {
-    bottom: 22%;
-    left: 5%;
+    bottom: 2%;
+    left: 22%;
 }
 
 .seat-btn .dealer-btn {
     top: 50%;
-    right: -25px;
+    right: -22px;
     transform: translateY(-50%);
 }
 
-/* CO - Direita inferior, espelho do BTN */
+/* CO - Baixo direita (espelho do BTN) */
 .seat-co {
-    bottom: 22%;
-    right: 5%;
+    bottom: 2%;
+    right: 22%;
 }
 
 .mesa-hint {
