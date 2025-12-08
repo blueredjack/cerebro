@@ -656,6 +656,8 @@ function getFoldedPositionsFromHistory(history, currentPosIdx) {
 }
 
 // === FREQUÊNCIAS E STATS ===
+let highlightedActionIndex = null; // Índice da ação em hover
+
 function updateFrequencies() {
     const list = document.getElementById('freqList');
     
@@ -685,12 +687,70 @@ function updateFrequencies() {
         const label = getActionLabel(a, currentStack);
         const amount = a.amount ? formatAmount(a.amount, currentStack) : '';
         
-        return `<div class="freq-item">
+        return `<div class="freq-item" data-action-index="${i}" 
+                     onmouseenter="highlightAction(${i})" 
+                     onmouseleave="clearHighlight()">
             <div class="freq-color" style="background: ${colorHex}"></div>
             <span class="freq-label">${label}${amount ? ' ' + amount : ''}</span>
             <span class="freq-value" style="color: ${colorHex}">${pct}%</span>
         </div>`;
     }).join('');
+}
+
+// Destaca apenas a ação específica no range
+function highlightAction(actionIndex) {
+    highlightedActionIndex = actionIndex;
+    updateRangeGridFiltered(actionIndex);
+}
+
+// Limpa o destaque e mostra todas as ações
+function clearHighlight() {
+    highlightedActionIndex = null;
+    updateRangeGrid(); // Volta ao normal
+}
+
+// Atualiza o grid mostrando apenas a ação filtrada
+function updateRangeGridFiltered(actionIndex) {
+    if (!currentSpot || !currentSpot.a) return;
+    
+    const action = currentSpot.a[actionIndex];
+    const category = getActionCategory(action, actionIndex, currentStack);
+    const hex = ACTION_COLORS[category]?.hex || '#64748b';
+    
+    document.querySelectorAll('.hand-cell').forEach(cell => {
+        const hand = cell.dataset.hand;
+        const hd = currentSpot.h ? currentSpot.h[hand] : null;
+        
+        if (!hd || !hd.played || !hd.played[actionIndex]) {
+            // Mão não tem essa ação - cinza escuro
+            cell.style.background = '#2d3748';
+            cell.style.color = '#4a5568';
+            cell.innerHTML = hand;
+            return;
+        }
+        
+        const freq = hd.played[actionIndex];
+        
+        if (freq <= 0) {
+            // Frequência zero - cinza
+            cell.style.background = '#2d3748';
+            cell.style.color = '#4a5568';
+            cell.innerHTML = hand;
+            return;
+        }
+        
+        if (freq >= 0.95) {
+            // Quase 100% - bloco inteiro colorido
+            cell.style.background = hex;
+        } else {
+            // Frequência parcial - diagonal
+            const stopPoint = (1 - freq) * 100;
+            cell.style.background = `linear-gradient(135deg, #2d3748 ${stopPoint}%, ${hex} ${stopPoint}%)`;
+        }
+        
+        cell.style.color = '#000';
+        cell.innerHTML = hand;
+    });
 }
 
 function getFreqColorClass(a, idx) {

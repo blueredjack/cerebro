@@ -785,12 +785,24 @@ body {
     align-items: center;
     gap: 8px;
     margin-bottom: 12px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin-left: -8px;
+    margin-right: -8px;
+}
+
+.freq-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(3px);
 }
 
 .freq-color {
     width: 16px;
     height: 16px;
     border-radius: 3px;
+    flex-shrink: 0;
 }
 
 .freq-color-fold { background: #6a7a8a; }
