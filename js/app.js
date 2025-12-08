@@ -336,15 +336,16 @@ function updateActions() {
 // === SISTEMA DE CORES UNIFICADO ===
 // Cores padronizadas por tipo de ação (independente de stack)
 const ACTION_COLORS = {
-    FOLD:     { btn: 'btn-fold',     hex: '#64748b' },  // Cinza
+    FOLD:     { btn: 'btn-fold',     hex: '#4a5568' },  // Cinza escuro
     CHECK:    { btn: 'btn-check',    hex: '#3b82f6' },  // Azul
-    CALL:     { btn: 'btn-call',     hex: '#22c55e' },  // Verde
-    RAISE_1:  { btn: 'btn-raise-1',  hex: '#e85d04' },  // Laranja forte/queimado
-    RAISE_2:  { btn: 'btn-raise-2',  hex: '#ffd60a' },  // Amarelo vivo
-    RAISE_3:  { btn: 'btn-raise-3',  hex: '#dc2626' },  // Vermelho
-    RAISE_4:  { btn: 'btn-raise-4',  hex: '#f472b6' },  // Rosa bebê
-    RAISE_5:  { btn: 'btn-raise-5',  hex: '#a855f7' },  // Roxo
-    ALLIN:    { btn: 'btn-allin',    hex: '#9d174d' }   // Magenta escuro
+    CALL:     { btn: 'btn-call',     hex: '#00bfff' },  // Ciano (Call)
+    RAISE_1:  { btn: 'btn-raise-1',  hex: '#0066ff' },  // Azul forte (Raise 5.00 BB)
+    RAISE_2:  { btn: 'btn-raise-2',  hex: '#00ff00' },  // Verde limão (Raise 7.00 BB)
+    RAISE_3:  { btn: 'btn-raise-3',  hex: '#ffff00' },  // Amarelo (Raise 9.00 BB)
+    RAISE_4:  { btn: 'btn-raise-4',  hex: '#ff00ff' },  // Magenta (Raise 12.00 BB)
+    RAISE_5:  { btn: 'btn-raise-5',  hex: '#00ffff' },  // Ciano claro (Raise adicional)
+    RAISE_6:  { btn: 'btn-raise-6',  hex: '#ff8c00' },  // Laranja (Raise 35.00 BB)
+    ALLIN:    { btn: 'btn-allin',    hex: '#dc2626' }   // Vermelho (All-in)
 };
 
 function getActionCategory(action, actionIndex, stack) {
@@ -365,7 +366,8 @@ function getActionCategory(action, actionIndex, stack) {
         if (raiseIndex === 1) return 'RAISE_2';
         if (raiseIndex === 2) return 'RAISE_3';
         if (raiseIndex === 3) return 'RAISE_4';
-        return 'RAISE_5';
+        if (raiseIndex === 4) return 'RAISE_5';
+        return 'RAISE_6';
     }
     
     return 'FOLD';

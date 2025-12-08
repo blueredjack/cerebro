@@ -800,52 +800,57 @@ body {
 }
 
 .btn-fold { 
-    background: linear-gradient(135deg, #64748b, #475569); 
+    background: linear-gradient(135deg, #4a5568, #374151); 
     color: #fff; 
 }
 .btn-call { 
-    background: linear-gradient(135deg, #22c55e, #16a34a); 
-    color: #fff; 
+    background: linear-gradient(135deg, #00bfff, #0099cc); 
+    color: #000; 
 }
 .btn-check { 
     background: linear-gradient(135deg, #3b82f6, #2563eb); 
     color: #fff; 
 }
-/* Raise 1 - Primeiro raise (laranja queimado - bem distinto do amarelo) */
+/* Raise 1 - Azul forte */
 .btn-raise-1 { 
-    background: linear-gradient(135deg, #e85d04, #d45200); 
+    background: linear-gradient(135deg, #0066ff, #0052cc); 
     color: #fff; 
 }
-/* Raise 2 - Segundo raise/3bet (amarelo vivo - bem distinto do laranja) */
+/* Raise 2 - Verde limão */
 .btn-raise-2 { 
-    background: linear-gradient(135deg, #ffd60a, #e6c200); 
+    background: linear-gradient(135deg, #00ff00, #00cc00); 
     color: #000; 
 }
-/* Raise 3 - Terceiro raise/4bet+ (vermelho) */
+/* Raise 3 - Amarelo */
 .btn-raise-3 { 
-    background: linear-gradient(135deg, #dc2626, #b91c1c); 
-    color: #fff; 
+    background: linear-gradient(135deg, #ffff00, #cccc00); 
+    color: #000; 
 }
-/* Raise 4 - Quarto raise (rosa bebê) */
+/* Raise 4 - Magenta */
 .btn-raise-4 { 
-    background: linear-gradient(135deg, #f472b6, #ec4899); 
+    background: linear-gradient(135deg, #ff00ff, #cc00cc); 
     color: #fff; 
 }
-/* Raise 5 - Quinto raise (roxo) */
+/* Raise 5 - Ciano claro */
 .btn-raise-5 { 
-    background: linear-gradient(135deg, #a855f7, #9333ea); 
-    color: #fff; 
+    background: linear-gradient(135deg, #00ffff, #00cccc); 
+    color: #000; 
 }
-/* All-in - Magenta escuro com destaque */
+/* Raise 6 - Laranja */
+.btn-raise-6 { 
+    background: linear-gradient(135deg, #ff8c00, #cc7000); 
+    color: #000; 
+}
+/* All-in - Vermelho com destaque */
 .btn-allin { 
-    background: linear-gradient(135deg, #9d174d, #831843); 
+    background: linear-gradient(135deg, #dc2626, #b91c1c); 
     color: #fff;
     border: 2px solid #fbbf24 !important;
-    box-shadow: 0 0 15px rgba(157, 23, 77, 0.5);
+    box-shadow: 0 0 15px rgba(220, 38, 38, 0.5);
 }
 /* Compatibilidade com código antigo */
 .btn-raise { 
-    background: linear-gradient(135deg, #e85d04, #d45200); 
+    background: linear-gradient(135deg, #0066ff, #0052cc); 
     color: #fff; 
 }
 .btn-raise-alt { 
