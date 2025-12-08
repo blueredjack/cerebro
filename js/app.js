@@ -360,6 +360,16 @@ function isRFISpot(key) {
     return RFI_HISTORY[posLetter] === history;
 }
 
+// Verifica se é o primeiro raise da mão (spot de abertura)
+function isOpeningSpot(key) {
+    const match = key.match(/^(\d+)BB_([UHCBSDX])_(.*)$/);
+    if (!match) return false;
+    const [, , , history] = match;
+    // É opening se o histórico é só Fs seguidos de R, ou só R
+    // Exemplos: R, F, FF, FFF, FFFF, FFFFF
+    return /^F*R?$/.test(history);
+}
+
 function getNextSpotKey(currentKey, actionType) {
     const match = currentKey.match(/^(\d+)BB_([UHCBSDX])_(.*)$/);
     if (!match) return { key: null, nextPos: null, newHistory: null };
@@ -369,19 +379,31 @@ function getNextSpotKey(currentKey, actionType) {
     
     let newHistory;
     
+    // Lógica especial para spots RFI (primeiro a agir)
     if (isRFISpot(currentKey)) {
-        // Em spot RFI:
-        // F = não abre, passa o RFI pro próximo
-        // R = abre, próximo está facing raise
         if (actionType === 'F') {
-            const nextPosIdx = (currentPosIdx + 1) % 7;
-            const nextPosLetter = POSITION_LETTERS[nextPosIdx];
-            newHistory = RFI_HISTORY[nextPosLetter];
+            // Fold no RFI: próximo assume RFI, histórico adiciona F
+            newHistory = history.replace(/R$/, '') + 'F';
+            // Se era só R, vira F. Se era F, vira FF. etc.
+            if (history === 'R') {
+                newHistory = 'F';
+            } else {
+                newHistory = history + 'F';
+            }
         } else {
-            newHistory = 'R';
+            // Raise no RFI: próximo está facing raise
+            // O histórico se torna o que tinha + mantém só um R
+            // FFF + R = FFFR (não FFFR + R)
+            if (history === 'R') {
+                // EP abriu, próximo vê só R
+                newHistory = 'R';
+            } else {
+                // CO abriu (FFF), próximo vê FFFR
+                newHistory = history + 'R';
+            }
         }
     } else {
-        // Não é RFI: adiciona ação ao histórico
+        // Não é RFI: simplesmente adiciona a ação ao histórico
         newHistory = history + actionType;
     }
     
@@ -396,7 +418,7 @@ function getNextSpotKey(currentKey, actionType) {
         }
     }
     
-    // Não encontrou spot, mas retorna info para mostrar tela vazia
+    // Não encontrou spot, retorna próxima posição para mostrar tela vazia
     const nextPosIdx = (currentPosIdx + 1) % 7;
     return { key: null, nextPos: nextPosIdx, newHistory };
 }
