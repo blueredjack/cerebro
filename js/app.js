@@ -1,6 +1,6 @@
 /* ============================================
    CEREBRO - Visualizador de Ranges MTT
-   app.js - Lógica principal
+   app.js - Lógica principal CORRIGIDA
    ============================================ */
 
 // === CONSTANTES ===
@@ -9,9 +9,26 @@ const POSITION_LETTERS = ['U', 'H', 'C', 'B', 'S', 'D', 'X'];
 const STACKS = [5, 6, 7, 8, 9, 10, 12, 15, 17, 20, 25, 30, 35, 40, 50, 75, 100];
 const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
 
+// Mapeamento de letra para índice de posição
+// U=EP(0), H=MP(1), C=HJ(2), B=CO(3), S=BTN(4), D=SB(5), X=BB(6)
+const POS_MAP = { 'U': 0, 'H': 1, 'C': 2, 'B': 3, 'S': 4, 'D': 5, 'X': 6 };
+
+// Chaves RFI para cada posição (quando todos antes foldam)
+// EP: primeiro a agir, MP: EP fold, HJ: EP+MP fold, etc.
+const RFI_PATTERNS = {
+    0: '_R',      // EP: STACK_U_R
+    1: '_F',      // MP: STACK_H_F (EP fold)
+    2: '_FF',     // HJ: STACK_C_FF (EP+MP fold)
+    3: '_FFF',    // CO: STACK_B_FFF
+    4: '_FFFF',   // BTN: STACK_S_FFFF
+    5: '_FFFFF',  // SB: STACK_D_FFFFF
+    6: '_FFFFFC'  // BB: STACK_X_FFFFFC (SB completa)
+};
+
 // === ESTADO GLOBAL ===
 let currentStack = 100;
 let currentSpot = null;
+let currentSpotKey = null;
 let selectedHand = null;
 let navigationPath = [];
 
@@ -39,6 +56,7 @@ function goBack() {
     if (navigationPath.length > 1) {
         navigationPath.pop();
         const prev = navigationPath[navigationPath.length - 1];
+        currentSpotKey = prev.key;
         currentSpot = SPOTS_DATA[prev.key];
         updateDisplay();
     } else {
@@ -114,8 +132,8 @@ function showHandDetails(hand) {
     const actions = currentSpot.a || [];
     document.getElementById('handName').textContent = hand;
     document.getElementById('handEvList').innerHTML = actions.map((a, i) => {
-        const ev = hd.evs[i];
-        const freq = (hd.played[i] * 100).toFixed(0);
+        const ev = hd.evs && hd.evs[i] !== undefined ? hd.evs[i] : 0;
+        const freq = ((hd.played[i] || 0) * 100).toFixed(0);
         const evClass = ev > 0 ? 'positive' : 'negative';
         return `<div class="hand-ev-item">
             <span class="hand-ev-action">${getActionLabel(a)} (${freq}%)</span>
@@ -125,33 +143,66 @@ function showHandDetails(hand) {
     panel.classList.add('visible');
 }
 
+// === BUSCA DE SPOTS ===
+function findRFISpot(stack, posIndex) {
+    // Padrão RFI depende da posição
+    const posLetter = POSITION_LETTERS[posIndex];
+    const pattern = RFI_PATTERNS[posIndex];
+    
+    if (!pattern) return null;
+    
+    const key = `${stack}BB_${posLetter}${pattern}`;
+    
+    if (SPOTS_DATA[key]) {
+        console.log(`Encontrado RFI: ${key}`);
+        return key;
+    }
+    
+    console.log(`RFI não encontrado: ${key}`);
+    return null;
+}
+
 // === SELEÇÃO DE POSIÇÃO ===
 function selectPosition(pos) {
     resetToInitialState();
-    const key = `${currentStack}BB_${POSITION_LETTERS[pos]}_`;
-    currentSpot = SPOTS_DATA[key];
-    if (!currentSpot) {
+    
+    const spotKey = findRFISpot(currentStack, pos);
+    
+    if (!spotKey || !SPOTS_DATA[spotKey]) {
         document.getElementById('rangePosition').textContent = 'Não disponível';
+        console.log(`Spot RFI não encontrado para posição ${POSITIONS[pos]} em ${currentStack}BB`);
         return;
     }
-    navigationPath = [{ key, position: pos }];
+    
+    currentSpotKey = spotKey;
+    currentSpot = SPOTS_DATA[spotKey];
+    navigationPath = [{ key: spotKey, position: pos }];
     
     // Marcar hero e folds
     document.querySelectorAll('.seat').forEach(s => s.classList.remove('hero', 'folded'));
     document.querySelector(`.seat-${POSITIONS[pos].toLowerCase()}`).classList.add('hero');
+    
+    // Marcar posições anteriores como folded (porque é RFI)
     for (let i = 0; i < pos; i++) {
-        document.querySelector(`.seat-${POSITIONS[i].toLowerCase()}`).classList.add('folded');
+        const seat = document.querySelector(`.seat-${POSITIONS[i].toLowerCase()}`);
+        if (seat) seat.classList.add('folded');
     }
+    
     updateDisplay();
 }
 
 // === ATUALIZAÇÃO DO DISPLAY ===
 function updateDisplay() {
     if (!currentSpot) return;
-    const heroPos = POSITIONS[currentSpot.p];
+    
+    // Determinar posição do hero
+    const heroIdx = currentSpot.p !== undefined ? currentSpot.p : 0;
+    const heroPos = POSITIONS[heroIdx] || 'EP';
+    
     document.getElementById('heroBadge').textContent = heroPos + ' ?';
     document.getElementById('rangePosition').textContent = heroPos;
     document.getElementById('statsPosition').textContent = heroPos;
+    
     updateRangeGrid();
     updateActions();
     updateFrequencies();
@@ -162,24 +213,55 @@ function updateDisplay() {
 function updateRangeGrid() {
     document.querySelectorAll('.hand-cell').forEach(cell => {
         const hand = cell.dataset.hand;
-        const hd = currentSpot.h ? currentSpot.h[hand] : null;
+        const hd = currentSpot && currentSpot.h ? currentSpot.h[hand] : null;
+        
         if (!hd) {
-            cell.style.background = '#2d333b';
-            cell.style.color = '#8b949e';
+            cell.style.background = '#2d3748';
+            cell.style.color = '#6b7b8a';
             return;
         }
-        const played = hd.played;
+        
+        const played = hd.played || [];
         const actions = currentSpot.a || [];
-        let r = 45, g = 51, b = 59;
+        
+        // Calcular cor baseada nas frequências - cores vibrantes como na imagem
+        let r = 45, g = 55, b = 72; // Base: cinza azulado escuro
+        
         played.forEach((freq, idx) => {
             if (freq > 0 && actions[idx]) {
                 const t = actions[idx].type;
-                if (t === 'F') { r += 82 * freq; g += 89 * freq; b += 82 * freq; }
-                else if (t === 'C') { r += -6 * freq; g += 123 * freq; b += 36 * freq; }
-                else if (t === 'K') { r += 7 * freq; g += 101 * freq; b += 158 * freq; }
-                else if (t === 'R') { r += 179 * freq; g += 69 * freq; b += 36 * freq; }
+                if (t === 'F') {
+                    // Fold: cinza médio
+                    r += 70 * freq;
+                    g += 80 * freq;
+                    b += 85 * freq;
+                } else if (t === 'C') {
+                    // Call: verde
+                    r += -20 * freq;
+                    g += 140 * freq;
+                    b += 40 * freq;
+                } else if (t === 'K') {
+                    // Check: azul
+                    r += 20 * freq;
+                    g += 110 * freq;
+                    b += 160 * freq;
+                } else if (t === 'R') {
+                    // Raise: coral vibrante (igual à imagem)
+                    if (idx <= 1) {
+                        // Primeiro raise: coral/salmon vibrante
+                        r += 200 * freq;
+                        g += 85 * freq;
+                        b += 55 * freq;
+                    } else {
+                        // Raise alternativo: laranja/amarelo
+                        r += 220 * freq;
+                        g += 150 * freq;
+                        b += 30 * freq;
+                    }
+                }
             }
         });
+        
         cell.style.background = `rgb(${Math.min(255,Math.round(r))}, ${Math.min(255,Math.round(g))}, ${Math.min(255,Math.round(b))})`;
         cell.style.color = '#fff';
     });
@@ -192,12 +274,15 @@ function updateActions() {
         row.innerHTML = '';
         return;
     }
+    
     row.innerHTML = currentSpot.a.map((a, i) => {
         const label = getActionLabel(a);
         const btnClass = getButtonClass(a, i);
         const amount = a.amount ? formatAmount(a.amount) : '';
-        return `<button class="action-btn ${btnClass}" onclick="executeAction(${i})">
-            ${label}
+        const hasNode = a.node ? 'has-node' : '';
+        
+        return `<button class="action-btn ${btnClass} ${hasNode}" onclick="executeAction(${i})">
+            <span>${label}</span>
             ${amount ? `<span class="btn-amount">${amount}</span>` : ''}
         </button>`;
     }).join('');
@@ -221,52 +306,78 @@ function getButtonClass(a, idx) {
 
 function formatAmount(amt) {
     const bb = amt / 100000;
-    return bb >= 100 ? '100.00 BB' : bb.toFixed(2) + ' BB';
+    if (bb >= 100) return '100.00 BB';
+    if (bb >= 10) return bb.toFixed(2) + ' BB';
+    return bb.toFixed(2) + ' BB';
 }
 
 function executeAction(idx) {
     if (!currentSpot || !currentSpot.a || !currentSpot.a[idx]) return;
+    
     const a = currentSpot.a[idx];
     const node = a.node;
-    if (!node) { alert('Fim da árvore'); return; }
     
-    let nextKey = Object.keys(SPOTS_DATA).find(k => SPOTS_DATA[k]?.t === node);
-    if (!nextKey) {
-        const ck = navigationPath[navigationPath.length - 1].key;
-        const letter = a.type === 'F' ? 'F' : a.type === 'C' ? 'C' : 'R';
-        const pk = ck.slice(0, -1) + letter + '_';
-        if (SPOTS_DATA[pk]) { loadSpot(pk); return; }
+    if (!node) {
+        alert('Fim da árvore de decisão');
+        return;
     }
-    if (nextKey) loadSpot(nextKey);
-    else alert('Próximo nó não encontrado');
+    
+    // Buscar próximo spot pelo node
+    let nextKey = Object.keys(SPOTS_DATA).find(k => SPOTS_DATA[k]?.t === node);
+    
+    if (nextKey) {
+        loadSpot(nextKey);
+    } else {
+        alert('Próximo nó não encontrado: ' + node);
+    }
 }
 
 function loadSpot(key) {
     currentSpot = SPOTS_DATA[key];
+    currentSpotKey = key;
+    
     if (!currentSpot) return;
+    
     navigationPath.push({ key, position: currentSpot.p });
+    
+    // Atualizar hero na mesa
     document.querySelectorAll('.seat').forEach(s => s.classList.remove('hero'));
-    document.querySelector(`.seat-${POSITIONS[currentSpot.p].toLowerCase()}`).classList.add('hero');
+    const heroIdx = currentSpot.p !== undefined ? currentSpot.p : 0;
+    const heroPos = POSITIONS[heroIdx];
+    if (heroPos) {
+        const seat = document.querySelector(`.seat-${heroPos.toLowerCase()}`);
+        if (seat) seat.classList.add('hero');
+    }
+    
     updateDisplay();
 }
 
 // === FREQUÊNCIAS E STATS ===
 function updateFrequencies() {
-    if (!currentSpot || !currentSpot.h) {
-        document.getElementById('freqList').innerHTML = '';
+    const list = document.getElementById('freqList');
+    
+    if (!currentSpot || !currentSpot.h || !currentSpot.a) {
+        list.innerHTML = '';
         return;
     }
-    const actions = currentSpot.a || [];
+    
+    const actions = currentSpot.a;
     const totals = actions.map(() => 0);
     let count = 0;
+    
     Object.values(currentSpot.h).forEach(h => {
         const w = h.weight || 1;
-        h.played.forEach((f, i) => totals[i] += f * w);
+        if (h.played) {
+            h.played.forEach((f, i) => {
+                if (i < totals.length) totals[i] += f * w;
+            });
+        }
         count += w;
     });
-    document.getElementById('freqList').innerHTML = actions.map((a, i) => {
+    
+    list.innerHTML = actions.map((a, i) => {
         const pct = count > 0 ? (totals[i] / count * 100).toFixed(1) : '0.0';
-        const colorClass = a.type === 'F' ? 'fold' : a.type === 'C' ? 'call' : a.type === 'K' ? 'check' : (i > 1 ? 'raise2' : 'raise');
+        const colorClass = getFreqColorClass(a, i);
         return `<div class="freq-item">
             <div class="freq-color freq-color-${colorClass}"></div>
             <span class="freq-label">${getActionLabel(a)}</span>
@@ -275,28 +386,45 @@ function updateFrequencies() {
     }).join('');
 }
 
+function getFreqColorClass(a, idx) {
+    if (a.type === 'F') return 'fold';
+    if (a.type === 'C') return 'call';
+    if (a.type === 'K') return 'check';
+    if (a.type === 'R') return idx > 1 ? 'raise2' : 'raise';
+    return 'fold';
+}
+
 function updateStats() {
-    if (!currentSpot || !currentSpot.h) {
+    if (!currentSpot || !currentSpot.h || !currentSpot.a) {
         document.getElementById('statFold').textContent = '-';
         document.getElementById('statCall').textContent = '-';
         document.getElementById('statRaise').textContent = '-';
         return;
     }
-    const actions = currentSpot.a || [];
+    
+    const actions = currentSpot.a;
     const totals = actions.map(() => 0);
     let count = 0;
+    
     Object.values(currentSpot.h).forEach(h => {
         const w = h.weight || 1;
-        h.played.forEach((f, i) => totals[i] += f * w);
+        if (h.played) {
+            h.played.forEach((f, i) => {
+                if (i < totals.length) totals[i] += f * w;
+            });
+        }
         count += w;
     });
+    
     let foldPct = 0, callPct = 0, raisePct = 0;
+    
     actions.forEach((a, i) => {
         const pct = count > 0 ? totals[i] / count * 100 : 0;
         if (a.type === 'F') foldPct += pct;
         else if (a.type === 'C') callPct += pct;
-        else if (a.type === 'R') raisePct += pct;
+        else if (a.type === 'R' || a.type === 'K') raisePct += pct;
     });
+    
     document.getElementById('statFold').textContent = foldPct.toFixed(0) + '%';
     document.getElementById('statCall').textContent = callPct.toFixed(0) + '%';
     document.getElementById('statRaise').textContent = raisePct.toFixed(0) + '%';
@@ -305,8 +433,10 @@ function updateStats() {
 // === RESET ===
 function resetToInitialState() {
     currentSpot = null;
+    currentSpotKey = null;
     selectedHand = null;
     navigationPath = [];
+    
     document.querySelectorAll('.seat').forEach(s => s.classList.remove('hero', 'folded'));
     document.getElementById('heroBadge').textContent = '?';
     document.getElementById('rangePosition').textContent = '-';
@@ -317,9 +447,32 @@ function resetToInitialState() {
     document.getElementById('actionsRow').innerHTML = '';
     document.getElementById('freqList').innerHTML = '';
     document.getElementById('handDetails').classList.remove('visible');
+    
     document.querySelectorAll('.hand-cell').forEach(c => {
-        c.style.background = '#2d333b';
-        c.style.color = '#8b949e';
+        c.style.background = '#2d3748';
+        c.style.color = '#6b7b8a';
         c.classList.remove('selected');
     });
+}
+
+// === DEBUG ===
+function debugSpots() {
+    console.log('=== DEBUG SPOTS ===');
+    console.log('Total spots:', Object.keys(SPOTS_DATA).length);
+    
+    // Listar primeiros 20 spots
+    const keys = Object.keys(SPOTS_DATA).slice(0, 20);
+    keys.forEach(k => console.log(k));
+    
+    // Testar busca
+    POSITION_LETTERS.forEach((letter, idx) => {
+        const key = `${currentStack}BB_${letter}_`;
+        const found = SPOTS_DATA[key] ? 'FOUND' : 'NOT FOUND';
+        console.log(`${POSITIONS[idx]} (${letter}): ${key} - ${found}`);
+    });
+}
+
+// Chamar debug quando carregar
+if (typeof SPOTS_DATA !== 'undefined') {
+    console.log('SPOTS_DATA carregado com', Object.keys(SPOTS_DATA).length, 'spots');
 }
