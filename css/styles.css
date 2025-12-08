@@ -424,7 +424,7 @@ body {
 }
 
 .seat-box {
-    background: transparent;
+    background: #0b1929;
     border: 2px solid #3a5a7a;
     border-radius: 6px;
     padding: 8px 16px;
@@ -436,7 +436,7 @@ body {
 .seat.hero .seat-box {
     border-color: #f1c40f;
     box-shadow: 0 0 25px rgba(241, 196, 15, 0.5);
-    background: rgba(241, 196, 15, 0.08);
+    background: #0b1929;
 }
 
 .seat.folded .seat-box { 
@@ -446,7 +446,7 @@ body {
 /* Seat que já agiu (raised ou called) - destaque sutil */
 .seat.acted .seat-box {
     border-color: #3a8a5a;
-    background: rgba(50, 120, 80, 0.1);
+    background: #0b1929;
 }
 
 .seat-position { 
@@ -467,71 +467,70 @@ body {
     font-weight: 500;
 }
 
-.dealer-btn {
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    background: linear-gradient(135deg, #f5a623, #e8940c);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.6rem;
-    font-weight: 800;
-    color: #000;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-    border: 1px solid #ffd700;
-}
-
-/* === POSIÇÕES DOS SEATS - PRÓXIMAS DA MESA === */
+/* === POSIÇÕES DOS SEATS - COM ESPAÇO PARA DEALER BUTTON === */
 
 /* EP - Topo centro */
 .seat-ep {
-    top: 12%;
+    top: 8%;
     left: 50%;
     transform: translateX(-50%);
 }
 
 /* BB - Esquerda superior (diagonal) */
 .seat-bb {
-    top: 25%;
-    left: 8%;
+    top: 22%;
+    left: 5%;
 }
 
 /* MP - Direita superior (diagonal, espelho do BB) */
 .seat-mp {
-    top: 25%;
-    right: 8%;
+    top: 22%;
+    right: 5%;
 }
 
 /* SB - Esquerda centro-inferior */
 .seat-sb {
     top: 52%;
-    left: 5%;
+    left: 2%;
 }
 
 /* HJ - Direita centro-inferior (espelho do SB) */
 .seat-hj {
     top: 52%;
-    right: 5%;
+    right: 2%;
 }
 
 /* BTN - Baixo esquerda */
 .seat-btn {
-    bottom: 12%;
-    left: 25%;
-}
-
-.seat-btn .dealer-btn {
-    top: 50%;
-    right: -22px;
-    transform: translateY(-50%);
+    bottom: 8%;
+    left: 22%;
 }
 
 /* CO - Baixo direita (espelho do BTN) */
 .seat-co {
-    bottom: 12%;
-    right: 25%;
+    bottom: 8%;
+    right: 22%;
+}
+
+/* Dealer Button - na borda da mesa, entre BTN e mesa */
+.dealer-btn {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    background: linear-gradient(135deg, #f5a623, #e8940c);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    border: 2px solid #ffd700;
+    z-index: 10;
+    /* Posição padrão: entre BTN e mesa */
+    bottom: 18%;
+    left: 38%;
 }
 
 .mesa-hint {
