@@ -664,23 +664,46 @@ body {
 }
 
 .btn-fold { 
-    background: #4a5a6a; 
+    background: linear-gradient(135deg, #64748b, #475569); 
     color: #fff; 
 }
 .btn-call { 
-    background: #2ecc71; 
+    background: linear-gradient(135deg, #22c55e, #16a34a); 
     color: #fff; 
 }
 .btn-check { 
-    background: #3498db; 
+    background: linear-gradient(135deg, #3b82f6, #2563eb); 
     color: #fff; 
 }
+/* Raise 1 - Primeiro raise (laranja/coral) */
+.btn-raise-1 { 
+    background: linear-gradient(135deg, #f97316, #ea580c); 
+    color: #fff; 
+}
+/* Raise 2 - Segundo raise/3bet (amarelo) */
+.btn-raise-2 { 
+    background: linear-gradient(135deg, #eab308, #ca8a04); 
+    color: #fff; 
+}
+/* Raise 3 - Terceiro raise/4bet+ (vermelho) */
+.btn-raise-3 { 
+    background: linear-gradient(135deg, #ef4444, #dc2626); 
+    color: #fff; 
+}
+/* All-in - Vermelho escuro com destaque */
+.btn-allin { 
+    background: linear-gradient(135deg, #dc2626, #991b1b); 
+    color: #fff;
+    border: 2px solid #fbbf24 !important;
+    box-shadow: 0 0 15px rgba(220, 38, 38, 0.5);
+}
+/* Compatibilidade com código antigo */
 .btn-raise { 
-    background: #e07a5f; 
+    background: linear-gradient(135deg, #f97316, #ea580c); 
     color: #fff; 
 }
 .btn-raise-alt { 
-    background: #9b59b6; 
+    background: linear-gradient(135deg, #eab308, #ca8a04); 
     color: #fff; 
 }
 

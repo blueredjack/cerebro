@@ -139,8 +139,13 @@ function showHandDetails(hand) {
         const ev = hd.evs && hd.evs[i] !== undefined ? hd.evs[i] : 0;
         const freq = ((hd.played[i] || 0) * 100).toFixed(0);
         const evClass = ev > 0 ? 'positive' : 'negative';
+        const label = getActionLabel(a, currentStack);
+        const amount = a.amount ? formatAmount(a.amount, currentStack) : '';
+        const category = getActionCategory(a, i, currentStack);
+        const colorHex = ACTION_COLORS[category]?.hex || '#64748b';
+        
         return `<div class="hand-ev-item">
-            <span class="hand-ev-action">${getActionLabel(a)} (${freq}%)</span>
+            <span class="hand-ev-action" style="color: ${colorHex}">${label}${amount ? ' ' + amount : ''} (${freq}%)</span>
             <span class="hand-ev-value ${evClass}">${ev > 0 ? '+' : ''}${ev.toFixed(2)} BB</span>
         </div>`;
     }).join('');
@@ -228,41 +233,18 @@ function updateRangeGrid() {
         const played = hd.played || [];
         const actions = currentSpot.a || [];
         
-        // Cores IDÊNTICAS à imagem de referência
         // Base: cinza escuro azulado
         let r = 58, g = 74, b = 90;
         
         played.forEach((freq, idx) => {
             if (freq > 0 && actions[idx]) {
-                const t = actions[idx].type;
-                if (t === 'F') {
-                    // Fold: cinza médio (aumenta levemente)
-                    r += 50 * freq;
-                    g += 60 * freq;
-                    b += 65 * freq;
-                } else if (t === 'C') {
-                    // Call: verde
-                    r += -30 * freq;
-                    g += 150 * freq;
-                    b += 50 * freq;
-                } else if (t === 'K') {
-                    // Check: azul
-                    r += 30 * freq;
-                    g += 120 * freq;
-                    b += 170 * freq;
-                } else if (t === 'R') {
-                    // Raise: cores da imagem de referência
-                    if (idx <= 1) {
-                        // Primeiro raise: coral/salmon (#e07a5f)
-                        r += 166 * freq;
-                        g += 48 * freq;
-                        b += 5 * freq;
-                    } else {
-                        // Raise alternativo: amarelo/laranja (#f0b030)
-                        r += 182 * freq;
-                        g += 102 * freq;
-                        b += -42 * freq;
-                    }
+                const category = getActionCategory(actions[idx], idx, currentStack);
+                const colors = ACTION_COLORS[category]?.grid;
+                
+                if (colors) {
+                    r += colors.r * freq;
+                    g += colors.g * freq;
+                    b += colors.b * freq;
                 }
             }
         });
@@ -281,38 +263,88 @@ function updateActions() {
     }
     
     row.innerHTML = currentSpot.a.map((a, i) => {
-        const label = getActionLabel(a);
-        const btnClass = getButtonClass(a, i);
-        const amount = a.amount ? formatAmount(a.amount) : '';
-        const hasNode = a.node ? 'has-node' : '';
+        const label = getActionLabel(a, currentStack);
+        const btnClass = getButtonClass(a, i, currentStack);
+        const amount = a.amount ? formatAmount(a.amount, currentStack) : '';
         
-        return `<button class="action-btn ${btnClass} ${hasNode}" onclick="executeAction(${i})">
+        return `<button class="action-btn ${btnClass}" onclick="executeAction(${i})">
             <span>${label}</span>
             ${amount ? `<span class="btn-amount">${amount}</span>` : ''}
         </button>`;
     }).join('');
 }
 
-function getActionLabel(a) {
+// === SISTEMA DE CORES UNIFICADO ===
+// Cores padronizadas por tipo de ação (independente de stack)
+const ACTION_COLORS = {
+    FOLD:     { btn: 'btn-fold',     grid: { r: 50, g: 60, b: 65 },   hex: '#64748b' },
+    CHECK:    { btn: 'btn-check',    grid: { r: 30, g: 120, b: 170 }, hex: '#3b82f6' },
+    CALL:     { btn: 'btn-call',     grid: { r: -30, g: 150, b: 50 }, hex: '#22c55e' },
+    RAISE_1:  { btn: 'btn-raise-1',  grid: { r: 166, g: 48, b: 5 },   hex: '#f97316' },  // Primeiro raise (coral)
+    RAISE_2:  { btn: 'btn-raise-2',  grid: { r: 182, g: 102, b: -42 },hex: '#eab308' },  // Segundo raise (amarelo)
+    RAISE_3:  { btn: 'btn-raise-3',  grid: { r: 200, g: 50, b: 50 },  hex: '#ef4444' },  // Terceiro raise (vermelho)
+    ALLIN:    { btn: 'btn-allin',    grid: { r: 180, g: 0, b: 80 },   hex: '#dc2626' }   // All-in (vermelho escuro)
+};
+
+function getActionCategory(action, actionIndex, stack) {
+    const bb = action.amount ? action.amount / 100000 : 0;
+    const pctStack = stack > 0 ? (bb / stack) * 100 : 0;
+    
+    if (action.type === 'F') return 'FOLD';
+    if (action.type === 'K' || action.type === 'X') return 'CHECK';
+    if (action.type === 'C') return 'CALL';
+    
+    if (action.type === 'R') {
+        // All-in: quando o raise é >= 90% do stack
+        if (pctStack >= 90) return 'ALLIN';
+        
+        // Categorizar por índice do raise no spot
+        // Primeiro raise, segundo raise, etc.
+        const raiseIndex = actionIndex - countNonRaises(actionIndex);
+        if (raiseIndex <= 0) return 'RAISE_1';
+        if (raiseIndex === 1) return 'RAISE_2';
+        return 'RAISE_3';
+    }
+    
+    return 'FOLD';
+}
+
+function countNonRaises(upToIndex) {
+    if (!currentSpot || !currentSpot.a) return 0;
+    let count = 0;
+    for (let i = 0; i < upToIndex; i++) {
+        if (currentSpot.a[i].type !== 'R') count++;
+    }
+    return count;
+}
+
+function getActionLabel(a, stack) {
     if (a.type === 'F') return 'Fold';
-    if (a.type === 'K') return 'Check';
+    if (a.type === 'K' || a.type === 'X') return 'Check';
     if (a.type === 'C') return 'Call';
-    if (a.type === 'R') return 'Raise';
+    if (a.type === 'R') {
+        const bb = a.amount ? a.amount / 100000 : 0;
+        const pctStack = stack > 0 ? (bb / stack) * 100 : 0;
+        if (pctStack >= 90) return 'All-In';
+        return 'Raise';
+    }
     return a.type;
 }
 
-function getButtonClass(a, idx) {
-    if (a.type === 'F') return 'btn-fold';
-    if (a.type === 'K') return 'btn-check';
-    if (a.type === 'C') return 'btn-call';
-    if (a.type === 'R') return idx > 1 ? 'btn-raise-alt' : 'btn-raise';
-    return 'btn-fold';
+function getButtonClass(action, actionIndex, stack) {
+    const category = getActionCategory(action, actionIndex, stack);
+    return ACTION_COLORS[category]?.btn || 'btn-fold';
 }
 
-function formatAmount(amt) {
+function formatAmount(amt, stack) {
     const bb = amt / 100000;
-    if (bb >= 100) return '100.00 BB';
-    if (bb >= 10) return bb.toFixed(2) + ' BB';
+    const pctStack = stack > 0 ? (bb / stack) * 100 : 0;
+    
+    // Se for all-in, mostrar como "All-In"
+    if (pctStack >= 90) return '';
+    
+    if (bb >= 100) return bb.toFixed(0) + ' BB';
+    if (bb >= 10) return bb.toFixed(1) + ' BB';
     return bb.toFixed(2) + ' BB';
 }
 
@@ -493,21 +525,23 @@ function updateFrequencies() {
     
     list.innerHTML = actions.map((a, i) => {
         const pct = count > 0 ? (totals[i] / count * 100).toFixed(1) : '0.0';
-        const colorClass = getFreqColorClass(a, i);
+        const category = getActionCategory(a, i, currentStack);
+        const colorHex = ACTION_COLORS[category]?.hex || '#64748b';
+        const label = getActionLabel(a, currentStack);
+        const amount = a.amount ? formatAmount(a.amount, currentStack) : '';
+        
         return `<div class="freq-item">
-            <div class="freq-color freq-color-${colorClass}"></div>
-            <span class="freq-label">${getActionLabel(a)}</span>
-            <span class="freq-value freq-value-${colorClass}">${pct}%</span>
+            <div class="freq-color" style="background: ${colorHex}"></div>
+            <span class="freq-label">${label}${amount ? ' ' + amount : ''}</span>
+            <span class="freq-value" style="color: ${colorHex}">${pct}%</span>
         </div>`;
     }).join('');
 }
 
 function getFreqColorClass(a, idx) {
-    if (a.type === 'F') return 'fold';
-    if (a.type === 'C') return 'call';
-    if (a.type === 'K') return 'check';
-    if (a.type === 'R') return idx > 1 ? 'raise2' : 'raise';
-    return 'fold';
+    // Mantido para compatibilidade, mas não usado mais
+    const category = getActionCategory(a, idx, currentStack);
+    return category.toLowerCase().replace('_', '');
 }
 
 function updateStats() {
