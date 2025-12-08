@@ -970,3 +970,368 @@ body {
 .hand-ev-value { font-weight: 600; font-size: 0.75rem; }
 .hand-ev-value.positive { color: #2ecc71; }
 .hand-ev-value.negative { color: #e74c3c; }
+
+/* ============================================
+   PAINEL DE MODOS DE ANÁLISE
+   ============================================ */
+.analysis-panel {
+    background: #0d1f30;
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid #1a3550;
+    margin-top: 20px;
+}
+
+/* Bubble Factor */
+.bubble-factor {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+.bubble-factor.disabled {
+    opacity: 0.5;
+}
+
+.bubble-factor input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+}
+
+.bubble-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.bubble-title {
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.bubble-status {
+    color: #6a8aaa;
+    font-size: 0.7rem;
+}
+
+.analysis-title {
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.analysis-btn {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #2a4a6a;
+    border-radius: 8px;
+    background: transparent;
+    color: #7a9aba;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.analysis-btn:hover {
+    border-color: #00d4ff;
+    color: #00d4ff;
+}
+
+.analysis-btn.active {
+    border-color: #22c55e;
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.analysis-btn.active-exploit {
+    border-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+/* Ícone de barras coloridas (Melhor EV) */
+.analysis-icon-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 16px;
+}
+
+.analysis-icon-bar .bar {
+    width: 4px;
+    border-radius: 1px;
+}
+
+.analysis-icon-bar .bar-green {
+    height: 8px;
+    background: #22c55e;
+}
+
+.analysis-icon-bar .bar-yellow {
+    height: 12px;
+    background: #eab308;
+}
+
+.analysis-icon-bar .bar-red {
+    height: 16px;
+    background: #ef4444;
+}
+
+/* Ícone tenda (Exploit) */
+.analysis-icon-tent {
+    font-size: 1rem;
+}
+
+/* Controles do Exploit */
+.exploit-controls {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+.exploit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.exploit-label {
+    color: #7a9aba;
+    font-size: 0.8rem;
+}
+
+.exploit-value-display {
+    color: #f59e0b;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.exploit-controls input[type="number"] {
+    width: 100%;
+    padding: 8px 12px;
+    background: #1a2d42;
+    border: 1px solid #2a4a6a;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.exploit-controls input[type="number"]:focus {
+    outline: none;
+    border-color: #f59e0b;
+}
+
+/* Status dos Ranges */
+.analysis-status {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 15px;
+}
+
+.status-title {
+    color: #4a6a8a;
+    font-size: 0.7rem;
+    margin-bottom: 5px;
+}
+
+.status-value {
+    color: #22c55e;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.status-value.exploit {
+    color: #f59e0b;
+}
+
+.status-value.gto {
+    color: #22c55e;
+}
+
+.status-icon {
+    font-size: 0.9rem;
+}
+
+/* Ajuda */
+.analysis-help {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    color: #4a6a8a;
+    font-size: 0.75rem;
+    margin-top: 15px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.analysis-help:hover {
+    color: #00d4ff;
+}
+
+.help-icon {
+    width: 18px;
+    height: 18px;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+}
+
+/* ============================================
+   MODAL DE AJUDA
+   ============================================ */
+.help-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.help-modal-content {
+    background: #1a2d42;
+    border-radius: 12px;
+    padding: 20px;
+    max-width: 450px;
+    width: 90%;
+    border: 1px solid #2a4a6a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.help-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #2a4a6a;
+}
+
+.help-modal-icon {
+    font-size: 1.3rem;
+}
+
+.help-modal-header span:nth-child(2) {
+    flex: 1;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.help-close {
+    background: none;
+    border: none;
+    color: #6a8aaa;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.help-close:hover {
+    color: #fff;
+}
+
+.help-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.help-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.help-title-text {
+    color: #22c55e;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.help-title-text.exploit-color {
+    color: #f59e0b;
+}
+
+.help-section p {
+    color: #9ab;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.help-section ul {
+    margin: 10px 0 0 0;
+    padding-left: 20px;
+}
+
+.help-section li {
+    color: #9ab;
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+}
+
+.help-section .positive {
+    color: #22c55e;
+}
+
+.help-section .negative {
+    color: #ef4444;
+}
+
+.help-tip {
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.tip-icon {
+    font-size: 1rem;
+}
+
+.help-tip span:last-child {
+    color: #9ab;
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+.help-tip strong {
+    color: #3b82f6;
+}

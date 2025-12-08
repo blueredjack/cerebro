@@ -11,7 +11,7 @@ Sistema de visualização de ranges para MTT (Multi-Table Tournament) de poker.
 
 | Item | Valor |
 |------|-------|
-| **Versão** | 1.2.0 |
+| **Versão** | 1.3.0 |
 | **Última Atualização** | 2025-12-08 |
 | **Status** | ✅ Online |
 | **Spots Ativos** | 668 |
@@ -25,7 +25,7 @@ Sistema de visualização de ranges para MTT (Multi-Table Tournament) de poker.
 cerebro/
 ├── index.html          # Página principal (3 telas: Home, Fases, Visualizador)
 ├── css/
-│   └── styles.css      # Estilos (dark theme, cores unificadas, mesa dinâmica)
+│   └── styles.css      # Estilos (dark theme, responsivo, mesa dinâmica)
 ├── js/
 │   └── app.js          # Lógica da aplicação (navegação, cores, ações)
 ├── data/
@@ -39,7 +39,7 @@ cerebro/
 
 ### Tela 1 - Home
 - [x] Logo animado CEREBRO
-- [x] Cards de categoria (PKO, VANILLA, Drill)
+- [x] Cards de categoria (PKO 🎯, VANILLA ⚔️, Drill 🎮, AULAS 🔍)
 - [x] VANILLA ativo, outros "Em breve"
 
 ### Tela 2 - Seleção de Fase
@@ -48,27 +48,31 @@ cerebro/
 
 ### Tela 3 - Visualizador de Ranges
 - [x] Mesa 7-max com posições clicáveis
-- [x] Range grid 13x13 com cores dinâmicas
+- [x] Range grid 13x13 com cores dinâmicas (gradiente vertical)
 - [x] Navegação entre spots (RFI → Facing Raise → 3bet, etc.)
-- [x] Sistema de cores unificado para ações
-- [x] Atualização dinâmica da mesa (hero, folded)
-- [x] Painel de frequências
+- [x] Sistema de cores padronizado para ações
+- [x] Atualização dinâmica da mesa (hero amarelo, folded)
+- [x] Painel de frequências com hover filtering
+- [x] Painel de histórico de ações
 - [x] Detalhes de EV por mão
-- [x] Barra de stacks (5BB - 100BB)
+- [x] Barra de stacks (5BB - 100BB) com fonte maior
+- [x] Layout responsivo (adapta ao tamanho da janela)
+- [x] Dealer button na borda da mesa
 
 ---
 
-## 🎨 Sistema de Cores Unificado
+## 🎨 Sistema de Cores Padronizado
 
 | Ação | Cor | Hex | Classe CSS |
 |------|-----|-----|------------|
-| Fold | Cinza | `#64748b` | `btn-fold` |
+| Fold | Cinza | `#4a5568` | `btn-fold` |
 | Check | Azul | `#3b82f6` | `btn-check` |
-| Call | Verde | `#22c55e` | `btn-call` |
-| Raise 1 (open) | Laranja | `#f97316` | `btn-raise-1` |
-| Raise 2 (3bet) | Amarelo | `#eab308` | `btn-raise-2` |
-| Raise 3 (4bet+) | Vermelho | `#ef4444` | `btn-raise-3` |
-| All-in (≥90% stack) | Vermelho escuro + borda dourada | `#dc2626` | `btn-allin` |
+| Call | Ciano | `#00bfff` | `btn-call` |
+| 1º Raise | Amarelo | `#ffff00` | `btn-raise-1` |
+| 2º Raise | Verde | `#00ff00` | `btn-raise-2` |
+| 3º Raise | Roxo | `#9333ea` | `btn-raise-3` |
+| 4º Raise+ | Rosa bebê | `#f9a8d4` | `btn-raise-4` |
+| All-in (≥90% stack) | Vermelho + borda dourada | `#dc2626` | `btn-allin` |
 
 ---
 
@@ -111,6 +115,38 @@ MP facing (H_R) + 3bet → HJ facing 3bet (C_RR)
 
 ## 📋 CHANGELOG
 
+### [1.3.0] - 2025-12-08
+**🎨 Melhorias visuais, responsividade e histórico de ações**
+
+#### Adicionado
+- **Histórico de ações** - Painel mostrando sequência de ações do spot atual
+- **Hover filtering** - Passar mouse na frequência filtra o range para mostrar apenas aquela ação
+- **Card AULAS** - Nova seção na tela inicial (Em breve) com emoji 🔍
+- **Layout responsivo** - Elementos se adaptam automaticamente ao tamanho da janela
+- **Dealer button** na borda da mesa (entre posição e mesa)
+
+#### Alterado
+- **Gradiente dos combos**: Diagonal → Vertical (90deg)
+- **Emojis da Home**: PKO=🎯, VANILLA=⚔️, Drill=🎮, AULAS=🔍
+- **Cores padronizadas**: 
+  - 1º Raise = Amarelo
+  - 2º Raise = Verde  
+  - 3º Raise = Roxo
+  - 4º Raise+ = Rosa bebê
+- **Hero destacado em amarelo** (não mais azul)
+- **Seats com fundo sólido** (sem transparência)
+- **Fonte dos stacks** aumentada em 50%
+- **Mesa oval** redesenhada igual à referência
+- **Posições distribuídas** simetricamente ao redor da mesa
+- **Painel esquerdo** com background mais escuro para destaque
+
+#### Arquivos Modificados
+- `js/app.js` - Cores, hover filtering, histórico, gradiente vertical
+- `css/styles.css` - Responsividade, cores, layout da mesa
+- `index.html` - Painel de histórico, card AULAS, emojis
+
+---
+
 ### [1.2.0] - 2025-12-08
 **🔧 Correção completa da lógica de navegação + Mesa dinâmica**
 
@@ -133,11 +169,6 @@ MP facing (H_R) + 3bet → HJ facing 3bet (C_RR)
 - Mesa redesenhada para ficar igual à imagem de referência
 - Botões de ação com gradientes e cores consistentes
 
-#### Arquivos Modificados
-- `js/app.js` - Lógica de navegação e cores
-- `css/styles.css` - Mesa, botões, cores unificadas
-- `index.html` - Header da mesa com stack label
-
 ---
 
 ### [1.1.0] - 2025-12-07
@@ -148,10 +179,6 @@ MP facing (H_R) + 3bet → HJ facing 3bet (C_RR)
 - Mesa oval horizontal com posições corretas
 - Dealer button no BTN
 - Painel de stats (Fold/Call/Raise %)
-
-#### Alterado
-- Redesign completo do visualizador
-- Cores do grid mais vibrantes
 
 ---
 
@@ -191,13 +218,14 @@ git push origin main
 ### Próximas Funcionalidades
 - [ ] PKO (Progressive Knockout)
 - [ ] Drill Mode (treino)
+- [ ] AULAS (conteúdo educacional)
 - [ ] CEV Diamond Symmetric
 - [ ] Fases por % do Field (75%, 50%, 40%, Bolha, etc.)
 - [ ] Final Table (9-handed → HU)
 - [ ] ICM integrado
 
 ### Melhorias Planejadas
-- [ ] Responsividade mobile
+- [ ] Responsividade mobile completa
 - [ ] Exportar ranges como imagem
 - [ ] Histórico de navegação visual (breadcrumb)
 - [ ] Filtros por tipo de mão
@@ -220,7 +248,10 @@ Se você está continuando este projeto em um novo chat, aqui está o que precis
 - `getNextSpotKey(key, action)` - Calcula próximo spot
 - `loadSpot(key)` - Carrega spot e atualiza UI
 - `updateTableDisplay(key)` - Atualiza mesa (hero, folded)
+- `updateHistory()` - Atualiza painel de histórico de ações
 - `getActionCategory(action, idx, stack)` - Retorna categoria da ação para cor
+- `highlightAction(idx)` / `clearHighlight()` - Hover filtering nas frequências
+- `updateRangeGridFiltered(idx)` - Mostra apenas uma ação no grid
 
 ### Estrutura dos Spots (spots.js)
 ```javascript
@@ -244,6 +275,17 @@ Se você está continuando este projeto em um novo chat, aqui está o que precis
 - Facing raise: histórico + ação (ex: `R` + `F` = `RF`)
 - Sempre avança para próxima posição, nunca volta
 
+### Sistema de Cores (ACTION_COLORS)
+```javascript
+FOLD:    '#4a5568'  // Cinza
+CALL:    '#00bfff'  // Ciano
+RAISE_1: '#ffff00'  // Amarelo (1º raise)
+RAISE_2: '#00ff00'  // Verde (2º raise)
+RAISE_3: '#9333ea'  // Roxo (3º raise)
+RAISE_4: '#f9a8d4'  // Rosa bebê (4º raise+)
+ALLIN:   '#dc2626'  // Vermelho
+```
+
 ---
 
 ## 📞 Comandos Úteis
@@ -264,4 +306,4 @@ node --check js/app.js
 
 ---
 
-**Última atualização:** 2025-12-08 | **Versão:** 1.2.0
+**Última atualização:** 2025-12-08 | **Versão:** 1.3.0

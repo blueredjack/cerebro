@@ -36,6 +36,11 @@ let currentSpotKey = null;
 let selectedHand = null;
 let navigationPath = [];
 
+// Modos de análise
+let melhorEVAtivo = false;
+let exploitAtivo = false;
+let exploitBonus = 0;
+
 // === NAVEGAÇÃO ENTRE TELAS ===
 function showHomeScreen() {
     document.getElementById('homeScreen').classList.remove('hidden');
@@ -237,8 +242,33 @@ function updateRangeGrid() {
             return;
         }
         
-        const played = hd.played || [];
         const actions = currentSpot.a || [];
+        
+        // === MODO MELHOR EV (GTO) ===
+        // Mostra apenas a ação com maior EV para cada mão (cor sólida)
+        if (melhorEVAtivo) {
+            const melhor = getMelhorAcao(hand);
+            if (!melhor || !melhor.action || melhor.action.type === 'F') {
+                cell.style.background = '#2d3748';
+                cell.style.color = '#4a5568';
+                cell.innerHTML = hand;
+                return;
+            }
+            
+            const category = getActionCategory(melhor.action, melhor.idx, currentStack);
+            const hex = ACTION_COLORS[category]?.hex || '#f97316';
+            cell.style.background = hex;
+            cell.style.color = '#000';
+            cell.innerHTML = hand;
+            return;
+        }
+        
+        // === MODO EXPLOIT ===
+        // Ajusta frequências baseado no bônus
+        let played = hd.played || [];
+        if (exploitAtivo && exploitBonus !== 0) {
+            played = aplicarExploit(played, hd.evs);
+        }
         
         // Calcular frequência total de ações (não-fold)
         let totalActionFreq = 0;
@@ -265,38 +295,29 @@ function updateRangeGrid() {
         }
         
         // Criar visualização com blocos divididos VERTICALMENTE
-        // Usar gradiente CSS de cima para baixo (180deg)
-        
         if (actionColors.length === 1) {
-            // Uma única ação (ex: 100% raise ou mix raise)
             const color = actionColors[0].hex;
             const freq = actionColors[0].freq;
             
             if (freq >= 0.95) {
-                // Quase 100% - bloco inteiro colorido
                 cell.style.background = color;
             } else {
-                // Frequência parcial - vertical (cinza à esquerda, cor à direita)
                 const stopPoint = (1 - freq) * 100;
                 cell.style.background = `linear-gradient(90deg, #2d3748 ${stopPoint}%, ${color} ${stopPoint}%)`;
             }
         } else {
-            // Múltiplas ações (ex: raise + call mix)
-            // Ordenar por frequência (maior primeiro)
+            // Múltiplas ações - ordenar por frequência
             actionColors.sort((a, b) => b.freq - a.freq);
             
-            // Criar gradiente vertical com múltiplas cores
             let gradientStops = [];
             let currentStop = 0;
             
-            // Área cinza (fold) primeiro à esquerda
             const foldFreq = 1 - totalActionFreq;
             if (foldFreq > 0.05) {
                 gradientStops.push(`#2d3748 ${foldFreq * 100}%`);
                 currentStop = foldFreq * 100;
             }
             
-            // Adicionar cada cor de ação
             actionColors.forEach((ac, i) => {
                 const startStop = currentStop;
                 currentStop += ac.freq * 100;
@@ -307,7 +328,6 @@ function updateRangeGrid() {
             cell.style.background = `linear-gradient(90deg, ${gradientStops.join(', ')})`;
         }
         
-        // Texto preto para melhor contraste
         cell.style.color = '#000';
         cell.innerHTML = hand;
     });
@@ -889,6 +909,171 @@ function resetToInitialState() {
         c.style.color = '#6b7b8a';
         c.classList.remove('selected');
     });
+    
+    // Reset modos de análise
+    melhorEVAtivo = false;
+    exploitAtivo = false;
+    exploitBonus = 0;
+    updateAnalysisButtons();
+}
+
+// === MODOS DE ANÁLISE ===
+
+function toggleMelhorEV() {
+    melhorEVAtivo = !melhorEVAtivo;
+    
+    // Desativar exploit se ativar melhor EV
+    if (melhorEVAtivo) {
+        exploitAtivo = false;
+        document.getElementById('exploitControls').style.display = 'none';
+    }
+    
+    updateAnalysisButtons();
+    updateRangeGrid();
+}
+
+function toggleExploit() {
+    exploitAtivo = !exploitAtivo;
+    
+    // Desativar melhor EV se ativar exploit
+    if (exploitAtivo) {
+        melhorEVAtivo = false;
+        document.getElementById('exploitControls').style.display = 'block';
+        exploitBonus = parseInt(document.getElementById('exploitSlider').value) || 1;
+    } else {
+        document.getElementById('exploitControls').style.display = 'none';
+        exploitBonus = 0;
+    }
+    
+    updateAnalysisButtons();
+    updateRangeGrid();
+}
+
+function updateExploit(value) {
+    exploitBonus = parseInt(value) || 0;
+    const display = document.getElementById('exploitValueDisplay');
+    if (display) {
+        display.textContent = (exploitBonus > 0 ? '+' : '') + exploitBonus + '%';
+    }
+    updateAnalysisButtons();
+    updateRangeGrid();
+}
+
+function updateAnalysisButtons() {
+    const btnMelhorEV = document.getElementById('btnMelhorEV');
+    const btnExploit = document.getElementById('btnExploit');
+    const statusEl = document.getElementById('analysisStatus');
+    
+    if (!btnMelhorEV || !btnExploit || !statusEl) return;
+    
+    // Reset classes
+    btnMelhorEV.classList.remove('active', 'active-exploit');
+    btnExploit.classList.remove('active', 'active-exploit');
+    statusEl.classList.remove('exploit', 'gto');
+    
+    if (melhorEVAtivo) {
+        btnMelhorEV.classList.add('active');
+        btnMelhorEV.innerHTML = `
+            <span class="analysis-icon-bar">
+                <span class="bar bar-green"></span>
+                <span class="bar bar-yellow"></span>
+                <span class="bar bar-red"></span>
+            </span>
+            <span>GTO Ativo</span>`;
+        statusEl.innerHTML = '<span class="status-icon">📊</span><span>Modo GTO</span>';
+        statusEl.classList.add('gto');
+    } else {
+        btnMelhorEV.innerHTML = `
+            <span class="analysis-icon-bar">
+                <span class="bar bar-green"></span>
+                <span class="bar bar-yellow"></span>
+                <span class="bar bar-red"></span>
+            </span>
+            <span>Melhor EV</span>`;
+    }
+    
+    if (exploitAtivo) {
+        btnExploit.classList.add('active-exploit');
+        btnExploit.innerHTML = '<span class="analysis-icon-tent">🎪</span><span>Exploit Ativo</span>';
+        statusEl.innerHTML = '<span class="status-icon">🎪</span><span>Exploit ' + (exploitBonus > 0 ? '+' : '') + exploitBonus + '%</span>';
+        statusEl.classList.add('exploit');
+    } else {
+        btnExploit.innerHTML = '<span class="analysis-icon-tent">🎪</span><span>Ativar Exploit</span>';
+    }
+    
+    if (!melhorEVAtivo && !exploitAtivo) {
+        statusEl.innerHTML = '<span class="status-icon">📊</span><span>Range Original</span>';
+    }
+}
+
+// Funções do modal de ajuda
+function showAnalysisHelp() {
+    document.getElementById('helpModal').style.display = 'flex';
+}
+
+function closeAnalysisHelp() {
+    document.getElementById('helpModal').style.display = 'none';
+}
+
+// Fechar modal clicando fora
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('helpModal');
+    if (modal && e.target === modal) {
+        modal.style.display = 'none';
+    }
+});
+
+// Função para obter a melhor ação (maior EV) de uma mão
+function getMelhorAcao(hand) {
+    if (!currentSpot || !currentSpot.h || !currentSpot.h[hand]) return null;
+    
+    const hd = currentSpot.h[hand];
+    const evs = hd.evs || [];
+    const actions = currentSpot.a || [];
+    
+    let melhorIdx = 0;
+    let melhorEV = -Infinity;
+    
+    evs.forEach((ev, idx) => {
+        if (ev > melhorEV) {
+            melhorEV = ev;
+            melhorIdx = idx;
+        }
+    });
+    
+    return { idx: melhorIdx, ev: melhorEV, action: actions[melhorIdx] };
+}
+
+// Função para aplicar exploit às frequências
+function aplicarExploit(played, evs) {
+    if (!played || !evs || exploitBonus === 0) return played;
+    
+    const novasFreqs = [...played];
+    const bonus = exploitBonus / 100;
+    
+    // Encontrar ações de raise (mais agressivas)
+    const actions = currentSpot.a || [];
+    
+    actions.forEach((action, idx) => {
+        if (action.type === 'R') {
+            // Aumentar/diminuir raises baseado no bônus
+            novasFreqs[idx] = Math.max(0, Math.min(1, played[idx] + bonus * 0.3));
+        } else if (action.type === 'F') {
+            // Diminuir/aumentar folds inversamente
+            novasFreqs[idx] = Math.max(0, Math.min(1, played[idx] - bonus * 0.2));
+        } else if (action.type === 'C') {
+            // Calls ficam relativamente estáveis
+            novasFreqs[idx] = Math.max(0, Math.min(1, played[idx] - bonus * 0.1));
+        }
+    });
+    
+    // Normalizar para somar 1
+    const soma = novasFreqs.reduce((a, b) => a + b, 0);
+    if (soma > 0) {
+        novasFreqs.forEach((f, i) => novasFreqs[i] = f / soma);
+    }
+    
+    return novasFreqs;
 }
 
 // === DEBUG ===

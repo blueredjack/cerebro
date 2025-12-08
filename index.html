@@ -267,11 +267,97 @@
                 <div class="freq-title">FREQUÊNCIAS DO RANGE</div>
                 <div id="freqList"></div>
 
+                <!-- Modos de Análise -->
+                <div class="analysis-panel">
+                    <!-- Bubble Factor (inativo) -->
+                    <div class="bubble-factor disabled">
+                        <input type="checkbox" disabled>
+                        <div class="bubble-info">
+                            <span class="bubble-title">Bubble Factor</span>
+                            <span class="bubble-status">Não disponível para esta tree</span>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-title">Modos de Análise</div>
+                    
+                    <button class="analysis-btn" id="btnMelhorEV" onclick="toggleMelhorEV()">
+                        <span class="analysis-icon-bar">
+                            <span class="bar bar-green"></span>
+                            <span class="bar bar-yellow"></span>
+                            <span class="bar bar-red"></span>
+                        </span>
+                        <span>Melhor EV</span>
+                    </button>
+                    
+                    <button class="analysis-btn" id="btnExploit" onclick="toggleExploit()">
+                        <span class="analysis-icon-tent">🎪</span>
+                        <span>Ativar Exploit</span>
+                    </button>
+                    
+                    <div class="exploit-controls" id="exploitControls" style="display: none;">
+                        <div class="exploit-header">
+                            <span class="exploit-label">Bônus:</span>
+                            <span class="exploit-value-display" id="exploitValueDisplay">+1%</span>
+                        </div>
+                        <input type="number" id="exploitSlider" value="1" min="-10" max="10" oninput="updateExploit(this.value)">
+                    </div>
+                    
+                    <div class="analysis-status">
+                        <div class="status-title">Status dos Ranges:</div>
+                        <div class="status-value" id="analysisStatus">
+                            <span class="status-icon">📊</span>
+                            <span>Range Original</span>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-help" onclick="showAnalysisHelp()">
+                        <span class="help-icon">?</span>
+                        <span>Ajuda</span>
+                    </div>
+                </div>
+
                 <div class="hand-details" id="handDetails">
                     <div class="hand-details-title">DETALHES DA MÃO</div>
                     <div class="hand-details-name" id="handName">-</div>
                     <div class="hand-ev-list" id="handEvList"></div>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Ajuda -->
+    <div class="help-modal" id="helpModal" style="display: none;">
+        <div class="help-modal-content">
+            <div class="help-modal-header">
+                <span class="help-modal-icon">💡</span>
+                <span>Modos de Análise</span>
+                <button class="help-close" onclick="closeAnalysisHelp()">×</button>
+            </div>
+            <div class="help-section">
+                <div class="help-section-title">
+                    <span class="analysis-icon-bar">
+                        <span class="bar bar-green"></span>
+                        <span class="bar bar-yellow"></span>
+                        <span class="bar bar-red"></span>
+                    </span>
+                    <span class="help-title-text">Melhor EV (GTO)</span>
+                </div>
+                <p>Mostra a ação com maior valor esperado para cada mão, baseado em análise GTO.</p>
+            </div>
+            <div class="help-section">
+                <div class="help-section-title">
+                    <span class="analysis-icon-tent">🎪</span>
+                    <span class="help-title-text exploit-color">Exploit Mode</span>
+                </div>
+                <p>Ajusta as estratégias baseado em exploits. Use o controle de bônus para configurar:</p>
+                <ul>
+                    <li><span class="positive">Valores positivos:</span> Mais agressivo</li>
+                    <li><span class="negative">Valores negativos:</span> Mais conservador</li>
+                </ul>
+            </div>
+            <div class="help-tip">
+                <span class="tip-icon">💡</span>
+                <span><strong>Dica:</strong> Os controles de exploit e GTO afetam diretamente a visualização dos ranges. Experimente diferentes valores para ver como as estratégias mudam!</span>
             </div>
         </div>
     </div>
