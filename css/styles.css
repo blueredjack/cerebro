@@ -545,6 +545,90 @@ body {
 .mesa-hint span { color: #00d4ff; }
 
 /* ============================================
+   HISTORY PANEL - HISTÓRICO DE AÇÕES
+   ============================================ */
+.history-panel {
+    background: #0d1f30;
+    border-radius: 8px;
+    padding: 12px 15px;
+    border: 1px solid #1a3550;
+    margin-top: 10px;
+}
+
+.history-title {
+    color: #00bfff;
+    font-size: 0.65rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+.history-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.history-empty {
+    color: #4a6a8a;
+    font-size: 0.7rem;
+    font-style: italic;
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    font-size: 0.7rem;
+}
+
+.history-position {
+    color: #00d4ff;
+    font-weight: 700;
+}
+
+.history-action {
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+    font-size: 0.6rem;
+}
+
+.history-action.fold {
+    background: #64748b;
+    color: #fff;
+}
+
+.history-action.call {
+    background: #22c55e;
+    color: #fff;
+}
+
+.history-action.raise {
+    background: #e85d04;
+    color: #fff;
+}
+
+.history-action.check {
+    background: #3b82f6;
+    color: #fff;
+}
+
+.history-arrow {
+    color: #4a6a8a;
+    font-size: 0.8rem;
+}
+
+.history-current {
+    border: 1px solid #f1c40f;
+    background: rgba(241, 196, 15, 0.1);
+}
+
+/* ============================================
    STATS PANEL - RESPONSIVO
    ============================================ */
 .stats-panel {

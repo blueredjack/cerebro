@@ -220,6 +220,7 @@ function updateDisplay() {
     updateActions();
     updateFrequencies();
     updateStats();
+    updateHistory();
     document.getElementById('handDetails').classList.remove('visible');
 }
 
@@ -798,6 +799,75 @@ function updateStats() {
     document.getElementById('statRaise').textContent = raisePct.toFixed(0) + '%';
 }
 
+// === HISTÓRICO DE AÇÕES ===
+function updateHistory() {
+    const content = document.getElementById('historyContent');
+    
+    if (!currentSpotKey) {
+        content.innerHTML = '<div class="history-empty">Selecione uma posição para iniciar</div>';
+        return;
+    }
+    
+    // Extrair informações da key: 100BB_U_R ou 100BB_H_RF
+    const parts = currentSpotKey.split('_');
+    if (parts.length < 3) {
+        content.innerHTML = '<div class="history-empty">-</div>';
+        return;
+    }
+    
+    const history = parts[2]; // Ex: R, RF, RR, RFF, etc.
+    const currentPosLetter = parts[1];
+    const currentPosIdx = POS_MAP[currentPosLetter];
+    const currentPosName = POSITIONS[currentPosIdx] || currentPosLetter;
+    
+    // Construir histórico visual
+    let html = '';
+    let posIdx = 0; // Começa do EP
+    
+    for (let i = 0; i < history.length; i++) {
+        const action = history[i];
+        const posName = POSITIONS[posIdx] || `P${posIdx}`;
+        
+        let actionClass = '';
+        let actionText = '';
+        
+        if (action === 'F') {
+            actionClass = 'fold';
+            actionText = 'Fold';
+        } else if (action === 'R') {
+            actionClass = 'raise';
+            actionText = 'Raise';
+        } else if (action === 'C') {
+            actionClass = 'call';
+            actionText = 'Call';
+        } else if (action === 'K' || action === 'X') {
+            actionClass = 'check';
+            actionText = 'Check';
+        }
+        
+        html += `<div class="history-item">
+            <span class="history-position">${posName}</span>
+            <span class="history-action ${actionClass}">${actionText}</span>
+        </div>`;
+        
+        if (i < history.length - 1) {
+            html += '<span class="history-arrow">→</span>';
+        }
+        
+        posIdx++;
+        if (posIdx >= 7) posIdx = 0;
+    }
+    
+    // Adicionar posição atual (hero)
+    html += '<span class="history-arrow">→</span>';
+    html += `<div class="history-item history-current">
+        <span class="history-position">${currentPosName}</span>
+        <span class="history-action" style="background: #f1c40f; color: #000;">?</span>
+    </div>`;
+    
+    content.innerHTML = html;
+}
+
 // === RESET ===
 function resetToInitialState() {
     currentSpot = null;
@@ -815,6 +885,7 @@ function resetToInitialState() {
     document.getElementById('actionsRow').innerHTML = '';
     document.getElementById('freqList').innerHTML = '';
     document.getElementById('handDetails').classList.remove('visible');
+    document.getElementById('historyContent').innerHTML = '<div class="history-empty">Selecione uma posição para iniciar</div>';
     
     document.querySelectorAll('.hand-cell').forEach(c => {
         c.style.background = '#2d3748';
