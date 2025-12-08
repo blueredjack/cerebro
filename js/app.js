@@ -336,13 +336,13 @@ function updateActions() {
 // === SISTEMA DE CORES UNIFICADO ===
 // Cores padronizadas por tipo de ação (independente de stack)
 const ACTION_COLORS = {
-    FOLD:     { btn: 'btn-fold',     grid: { r: 50, g: 60, b: 65 },   hex: '#64748b' },
-    CHECK:    { btn: 'btn-check',    grid: { r: 30, g: 120, b: 170 }, hex: '#3b82f6' },
-    CALL:     { btn: 'btn-call',     grid: { r: -30, g: 150, b: 50 }, hex: '#22c55e' },
-    RAISE_1:  { btn: 'btn-raise-1',  grid: { r: 166, g: 48, b: 5 },   hex: '#f97316' },  // Primeiro raise (coral)
-    RAISE_2:  { btn: 'btn-raise-2',  grid: { r: 182, g: 102, b: -42 },hex: '#eab308' },  // Segundo raise (amarelo)
-    RAISE_3:  { btn: 'btn-raise-3',  grid: { r: 200, g: 50, b: 50 },  hex: '#ef4444' },  // Terceiro raise (vermelho)
-    ALLIN:    { btn: 'btn-allin',    grid: { r: 180, g: 0, b: 80 },   hex: '#dc2626' }   // All-in (vermelho escuro)
+    FOLD:     { btn: 'btn-fold',     hex: '#64748b' },  // Cinza
+    CHECK:    { btn: 'btn-check',    hex: '#3b82f6' },  // Azul
+    CALL:     { btn: 'btn-call',     hex: '#22c55e' },  // Verde
+    RAISE_1:  { btn: 'btn-raise-1',  hex: '#e85d04' },  // Laranja forte/queimado
+    RAISE_2:  { btn: 'btn-raise-2',  hex: '#ffd60a' },  // Amarelo vivo
+    RAISE_3:  { btn: 'btn-raise-3',  hex: '#dc2626' },  // Vermelho
+    ALLIN:    { btn: 'btn-allin',    hex: '#9d174d' }   // Magenta escuro
 };
 
 function getActionCategory(action, actionIndex, stack) {

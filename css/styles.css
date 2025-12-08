@@ -716,36 +716,36 @@ body {
     background: linear-gradient(135deg, #3b82f6, #2563eb); 
     color: #fff; 
 }
-/* Raise 1 - Primeiro raise (laranja/coral) */
+/* Raise 1 - Primeiro raise (laranja queimado - bem distinto do amarelo) */
 .btn-raise-1 { 
-    background: linear-gradient(135deg, #f97316, #ea580c); 
+    background: linear-gradient(135deg, #e85d04, #d45200); 
     color: #fff; 
 }
-/* Raise 2 - Segundo raise/3bet (amarelo) */
+/* Raise 2 - Segundo raise/3bet (amarelo vivo - bem distinto do laranja) */
 .btn-raise-2 { 
-    background: linear-gradient(135deg, #eab308, #ca8a04); 
-    color: #fff; 
+    background: linear-gradient(135deg, #ffd60a, #e6c200); 
+    color: #000; 
 }
 /* Raise 3 - Terceiro raise/4bet+ (vermelho) */
 .btn-raise-3 { 
-    background: linear-gradient(135deg, #ef4444, #dc2626); 
+    background: linear-gradient(135deg, #dc2626, #b91c1c); 
     color: #fff; 
 }
-/* All-in - Vermelho escuro com destaque */
+/* All-in - Magenta escuro com destaque */
 .btn-allin { 
-    background: linear-gradient(135deg, #dc2626, #991b1b); 
+    background: linear-gradient(135deg, #9d174d, #831843); 
     color: #fff;
     border: 2px solid #fbbf24 !important;
-    box-shadow: 0 0 15px rgba(220, 38, 38, 0.5);
+    box-shadow: 0 0 15px rgba(157, 23, 77, 0.5);
 }
 /* Compatibilidade com código antigo */
 .btn-raise { 
-    background: linear-gradient(135deg, #f97316, #ea580c); 
+    background: linear-gradient(135deg, #e85d04, #d45200); 
     color: #fff; 
 }
 .btn-raise-alt { 
-    background: linear-gradient(135deg, #eab308, #ca8a04); 
-    color: #fff; 
+    background: linear-gradient(135deg, #ffd60a, #e6c200); 
+    color: #000; 
 }
 
 .actions-hint { 
