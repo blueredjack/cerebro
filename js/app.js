@@ -264,8 +264,8 @@ function updateRangeGrid() {
             return;
         }
         
-        // Criar visualização com blocos divididos diagonalmente
-        // Usar gradiente CSS para simular a divisão
+        // Criar visualização com blocos divididos VERTICALMENTE
+        // Usar gradiente CSS de cima para baixo (180deg)
         
         if (actionColors.length === 1) {
             // Uma única ação (ex: 100% raise ou mix raise)
@@ -276,21 +276,20 @@ function updateRangeGrid() {
                 // Quase 100% - bloco inteiro colorido
                 cell.style.background = color;
             } else {
-                // Frequência parcial - diagonal
-                const angle = 135; // Diagonal do canto superior direito para inferior esquerdo
+                // Frequência parcial - vertical (cinza em cima, cor embaixo)
                 const stopPoint = (1 - freq) * 100;
-                cell.style.background = `linear-gradient(${angle}deg, #2d3748 ${stopPoint}%, ${color} ${stopPoint}%)`;
+                cell.style.background = `linear-gradient(180deg, #2d3748 ${stopPoint}%, ${color} ${stopPoint}%)`;
             }
         } else {
             // Múltiplas ações (ex: raise + call mix)
             // Ordenar por frequência (maior primeiro)
             actionColors.sort((a, b) => b.freq - a.freq);
             
-            // Criar gradiente com múltiplas cores
+            // Criar gradiente vertical com múltiplas cores
             let gradientStops = [];
             let currentStop = 0;
             
-            // Área cinza (fold) primeiro
+            // Área cinza (fold) primeiro no topo
             const foldFreq = 1 - totalActionFreq;
             if (foldFreq > 0.05) {
                 gradientStops.push(`#2d3748 ${foldFreq * 100}%`);
@@ -305,7 +304,7 @@ function updateRangeGrid() {
                 gradientStops.push(`${ac.hex} ${currentStop}%`);
             });
             
-            cell.style.background = `linear-gradient(135deg, ${gradientStops.join(', ')})`;
+            cell.style.background = `linear-gradient(180deg, ${gradientStops.join(', ')})`;
         }
         
         // Texto preto para melhor contraste
@@ -747,9 +746,9 @@ function updateRangeGridFiltered(actionIndex) {
             // Quase 100% - bloco inteiro colorido
             cell.style.background = hex;
         } else {
-            // Frequência parcial - diagonal
+            // Frequência parcial - vertical
             const stopPoint = (1 - freq) * 100;
-            cell.style.background = `linear-gradient(135deg, #2d3748 ${stopPoint}%, ${hex} ${stopPoint}%)`;
+            cell.style.background = `linear-gradient(180deg, #2d3748 ${stopPoint}%, ${hex} ${stopPoint}%)`;
         }
         
         cell.style.color = '#000';
