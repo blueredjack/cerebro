@@ -41,6 +41,43 @@ let melhorEVAtivo = false;
 let exploitAtivo = false;
 let exploitBonus = 0;
 
+// === CÁLCULO DE STATS DINÂMICOS ===
+function calculateAndUpdateStats() {
+    if (typeof SPOTS_DATA === 'undefined') {
+        console.warn('SPOTS_DATA não carregado ainda');
+        return;
+    }
+    
+    const spots = Object.keys(SPOTS_DATA);
+    const totalSpots = spots.length;
+    
+    // Extrair stacks únicos
+    const stacks = new Set();
+    spots.forEach(key => {
+        const match = key.match(/^(\d+)BB_/);
+        if (match) {
+            stacks.add(parseInt(match[1]));
+        }
+    });
+    const totalStacks = stacks.size;
+    
+    // Posições são sempre 7 (EP, MP, HJ, CO, BTN, SB, BB)
+    const totalPositions = 7;
+    
+    // Atualizar elementos no DOM
+    const statSpots = document.getElementById('statSpots');
+    const statStacks = document.getElementById('statStacks');
+    const statPositions = document.getElementById('statPositions');
+    const phaseBadge = document.getElementById('phaseBadgeSpots');
+    
+    if (statSpots) statSpots.textContent = totalSpots;
+    if (statStacks) statStacks.textContent = totalStacks;
+    if (statPositions) statPositions.textContent = totalPositions;
+    if (phaseBadge) phaseBadge.textContent = totalSpots + ' spots';
+    
+    console.log(`Stats: ${totalSpots} spots, ${totalStacks} stacks, ${totalPositions} posições`);
+}
+
 // === NAVEGAÇÃO ENTRE TELAS ===
 function showHomeScreen() {
     document.getElementById('homeScreen').classList.remove('hidden');
@@ -52,6 +89,7 @@ function showPhaseScreen() {
     document.getElementById('homeScreen').classList.add('hidden');
     document.getElementById('phaseScreen').classList.add('visible');
     document.getElementById('appContainer').classList.remove('visible');
+    calculateAndUpdateStats(); // Atualizar badge de spots
 }
 
 function showVisualizer() {
@@ -75,6 +113,7 @@ function goBack() {
 
 // === INICIALIZAÇÃO ===
 function initVisualizer() {
+    calculateAndUpdateStats(); // Calcular stats dinamicamente
     renderStackBar();
     renderRangeGrid();
     updateStacks();
