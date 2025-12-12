@@ -1335,3 +1335,50 @@ body {
 .help-tip strong {
     color: #3b82f6;
 }
+
+/* ============================================
+   MESA HEADS-UP (2 JOGADORES)
+   ============================================ */
+.mesa-hu {
+    height: 200px;
+}
+
+.mesa-oval-hu {
+    width: 180px;
+    height: 100px;
+}
+
+/* Posições HU - SB à esquerda, BB à direita */
+.seat-hu-sb {
+    position: absolute;
+    left: 5%;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.seat-hu-bb {
+    position: absolute;
+    right: 5%;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Dealer button HU - próximo ao SB */
+.dealer-btn-hu {
+    position: absolute;
+    left: 28%;
+    top: 35%;
+    transform: translate(-50%, -50%);
+}
+
+/* Ajustes para tela menor */
+@media (max-width: 1400px) {
+    .mesa-hu {
+        height: 180px;
+    }
+    
+    .mesa-oval-hu {
+        width: 160px;
+        height: 90px;
+    }
+}

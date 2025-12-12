@@ -107,7 +107,11 @@
             <div class="phase-section">
                 <div class="section-title">Heads-Up</div>
                 <div class="phase-grid">
-                    <div class="phase-card disabled"><span class="phase-icon">🥊</span><span class="phase-name">HU</span><span class="phase-badge badge-soon">SOON</span></div>
+                    <div class="phase-card active" onclick="showVisualizerHU()">
+                        <span class="phase-icon">🥊</span>
+                        <span class="phase-name">HU</span>
+                        <span class="phase-badge badge-spots" id="phaseBadgeSpotsHU">- spots</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -320,6 +324,207 @@
                     <div class="hand-details-title">DETALHES DA MÃO</div>
                     <div class="hand-details-name" id="handName">-</div>
                     <div class="hand-ev-list" id="handEvList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         TELA 4: VISUALIZADOR HU (HEADS-UP)
+         ============================================ -->
+    <div class="app-container" id="appContainerHU">
+        <!-- Header -->
+        <div class="viz-header">
+            <div class="viz-header-left">
+                <span class="brain-icon">🧠</span>
+                <div>
+                    <div class="viz-logo">CEREBRO</div>
+                    <div class="viz-subtitle">HEADS-UP • Texas Hold'em</div>
+                </div>
+            </div>
+            <div class="viz-header-center">
+                <div class="stat-box">
+                    <div class="stat-number" id="statSpotsHU">-</div>
+                    <div class="stat-label">SPOTS</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="statStacksHU">-</div>
+                    <div class="stat-label">STACKS</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">2</div>
+                    <div class="stat-label">POSIÇÕES</div>
+                </div>
+            </div>
+            <button class="menu-btn" onclick="showPhaseScreen()">← Menu Principal</button>
+        </div>
+
+        <!-- Stack Bar -->
+        <div class="stack-bar" id="stackBarHU"></div>
+
+        <!-- Main Content -->
+        <div class="viz-main">
+            <!-- Left Panel - Mesa HU -->
+            <div class="left-panel">
+                <div class="left-panel-header">
+                    <button class="back-btn" onclick="goBackHU()">← Voltar</button>
+                    <span class="position-badge" id="heroBadgeHU">?</span>
+                </div>
+                <div class="mesa-header">
+                    <div class="mesa-label">HEADS-UP</div>
+                    <div class="mesa-stack-label" id="mesaStackLabelHU">100BB</div>
+                </div>
+
+                <!-- Mesa HU (2 jogadores) -->
+                <div class="mesa-container mesa-hu">
+                    <div class="mesa-oval mesa-oval-hu">
+                        <div class="mesa-center">
+                            <div class="mesa-title">HEADS-UP</div>
+                            <div class="mesa-blinds">0.5bb / 1bb</div>
+                            <div class="mesa-blinds-label">Blinds</div>
+                        </div>
+                    </div>
+                    <!-- Seats HU - apenas SB e BB -->
+                    <div class="seat seat-hu-sb" onclick="selectPositionHU(0)">
+                        <div class="seat-box">
+                            <div class="seat-position">SB</div>
+                            <div class="seat-stack" id="seat-stack-hu-0">100BB</div>
+                        </div>
+                    </div>
+                    <!-- Dealer Button -->
+                    <div class="dealer-btn dealer-btn-hu" id="dealerBtnHU">D</div>
+                    <div class="seat seat-hu-bb" onclick="selectPositionHU(1)">
+                        <div class="seat-box">
+                            <div class="seat-position">BB</div>
+                            <div class="seat-stack" id="seat-stack-hu-1">100BB</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mesa-hint">💡 Clique em uma posição para ver seu range</div>
+
+                <!-- Histórico de Ações HU -->
+                <div class="action-history-panel">
+                    <div class="action-history-title">HISTÓRICO DE AÇÕES</div>
+                    <div class="action-history-flow" id="actionHistoryFlowHU">
+                        <span class="action-position">SB</span>
+                        <span class="action-badge action-unknown">?</span>
+                        <span class="action-arrow">→</span>
+                        <span class="action-position">BB</span>
+                        <span class="action-badge action-unknown">?</span>
+                    </div>
+                </div>
+
+                <!-- Stats HU -->
+                <div class="stats-panel">
+                    <div class="stats-header">
+                        <span>Stats - </span>
+                        <span id="statsPositionHU">?</span>
+                    </div>
+                    <div class="stats-badges" id="statsBadgesHU">
+                        <div class="stat-badge fold">F --</div>
+                        <div class="stat-badge call">C --</div>
+                        <div class="stat-badge raise">R --</div>
+                    </div>
+                    <div class="field-info">
+                        <div class="field-header">
+                            <span>FIELD EST.</span>
+                            <span>TOTAL</span>
+                            <span>PAGOS</span>
+                        </div>
+                        <div class="field-values">
+                            <span>Est.</span>
+                            <span>~2</span>
+                            <span>1</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="phase-indicator">
+                    <div class="phase-label">Fase do Torneio</div>
+                    <div class="phase-value">Heads-Up</div>
+                </div>
+            </div>
+
+            <!-- Center Panel - Range Grid HU -->
+            <div class="center-panel">
+                <div class="range-header">
+                    <span class="range-stack" id="rangeStackLabelHU">100BB</span>
+                    <span class="range-title">Range: </span>
+                    <span class="range-position" id="rangePositionHU">?</span>
+                </div>
+                <div class="range-grid" id="rangeGridHU"></div>
+                
+                <!-- Action Buttons HU -->
+                <div class="action-section">
+                    <div class="action-section-title">AÇÕES DISPONÍVEIS</div>
+                    <div class="action-buttons" id="actionButtonsHU">
+                        <button class="action-btn fold">Fold</button>
+                    </div>
+                    <div class="action-hint">
+                        <span class="hint-dot"></span>
+                        <span>Borda azul = próximo nó disponível</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Frequencies HU -->
+            <div class="right-panel">
+                <div class="freq-title">FREQUÊNCIAS DO RANGE</div>
+                <div id="freqListHU"></div>
+
+                <!-- Modos de Análise HU -->
+                <div class="analysis-panel">
+                    <div class="bubble-factor disabled">
+                        <input type="checkbox" disabled>
+                        <div class="bubble-info">
+                            <span class="bubble-title">Bubble Factor</span>
+                            <span class="bubble-status">Não disponível para HU</span>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-title">Modos de Análise</div>
+                    
+                    <button class="analysis-btn" id="btnMelhorEVHU" onclick="toggleMelhorEVHU()">
+                        <span class="analysis-icon-bar">
+                            <span class="bar bar-green"></span>
+                            <span class="bar bar-yellow"></span>
+                            <span class="bar bar-red"></span>
+                        </span>
+                        <span>Melhor EV</span>
+                    </button>
+                    
+                    <button class="analysis-btn" id="btnExploitHU" onclick="toggleExploitHU()">
+                        <span class="analysis-icon-tent">🎪</span>
+                        <span>Ativar Exploit</span>
+                    </button>
+                    
+                    <div class="exploit-controls" id="exploitControlsHU" style="display: none;">
+                        <div class="exploit-header">
+                            <span class="exploit-label">Bônus:</span>
+                            <span class="exploit-value-display" id="exploitValueDisplayHU">+1%</span>
+                        </div>
+                        <input type="number" id="exploitSliderHU" value="1" min="-10" max="10" oninput="updateExploitHU(this.value)">
+                    </div>
+                    
+                    <div class="analysis-status">
+                        <div class="status-title">Status dos Ranges:</div>
+                        <div class="status-value" id="analysisStatusHU">
+                            <span class="status-icon">📊</span>
+                            <span>Range Original</span>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-help" onclick="showAnalysisHelp()">
+                        <span class="help-icon">?</span>
+                        <span>Ajuda</span>
+                    </div>
+                </div>
+
+                <div class="hand-details" id="handDetailsHU">
+                    <div class="hand-details-title">DETALHES DA MÃO</div>
+                    <div class="hand-details-name" id="handNameHU">-</div>
+                    <div class="hand-ev-list" id="handEvListHU"></div>
                 </div>
             </div>
         </div>

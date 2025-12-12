@@ -83,12 +83,16 @@ function showHomeScreen() {
     document.getElementById('homeScreen').classList.remove('hidden');
     document.getElementById('phaseScreen').classList.remove('visible');
     document.getElementById('appContainer').classList.remove('visible');
+    const huContainer = document.getElementById('appContainerHU');
+    if (huContainer) huContainer.classList.remove('visible');
 }
 
 function showPhaseScreen() {
     document.getElementById('homeScreen').classList.add('hidden');
     document.getElementById('phaseScreen').classList.add('visible');
     document.getElementById('appContainer').classList.remove('visible');
+    const huContainer = document.getElementById('appContainerHU');
+    if (huContainer) huContainer.classList.remove('visible');
     calculateAndUpdateStats(); // Atualizar badge de spots
 }
 
@@ -96,6 +100,8 @@ function showVisualizer() {
     document.getElementById('homeScreen').classList.add('hidden');
     document.getElementById('phaseScreen').classList.remove('visible');
     document.getElementById('appContainer').classList.add('visible');
+    const huContainer = document.getElementById('appContainerHU');
+    if (huContainer) huContainer.classList.remove('visible');
     initVisualizer();
 }
 
@@ -1136,3 +1142,710 @@ function debugSpots() {
 if (typeof SPOTS_DATA !== 'undefined') {
     console.log('SPOTS_DATA carregado com', Object.keys(SPOTS_DATA).length, 'spots');
 }
+
+/* ============================================
+   MODO HEADS-UP (HU)
+   ============================================ */
+
+// Constantes HU
+const HU_POSITIONS = ['SB', 'BB'];
+const HU_POSITION_LETTERS = ['S', 'X']; // S = SB (BTN), X = BB
+
+// Estado HU
+let currentStackHU = 100;
+let currentSpotHU = null;
+let currentSpotKeyHU = null;
+let selectedHandHU = null;
+let navigationPathHU = [];
+let melhorEVAtivoHU = false;
+let exploitAtivoHU = false;
+let exploitBonusHU = 0;
+
+// Stacks disponíveis para HU (pode ser diferente)
+const STACKS_HU = [5, 6, 7, 8, 9, 10, 12, 15, 17, 20, 25, 30, 35, 40, 50, 75, 100];
+
+// === NAVEGAÇÃO HU ===
+function showVisualizerHU() {
+    document.getElementById('homeScreen').classList.add('hidden');
+    document.getElementById('phaseScreen').classList.remove('visible');
+    document.getElementById('appContainer').classList.remove('visible');
+    document.getElementById('appContainerHU').classList.add('visible');
+    initVisualizerHU();
+}
+
+function hideVisualizerHU() {
+    document.getElementById('appContainerHU').classList.remove('visible');
+}
+
+// === INICIALIZAÇÃO HU ===
+function initVisualizerHU() {
+    calculateAndUpdateStatsHU();
+    renderStackBarHU();
+    renderRangeGridHU();
+    updateStacksHU();
+    resetToInitialStateHU();
+}
+
+function calculateAndUpdateStatsHU() {
+    if (typeof SPOTS_DATA === 'undefined') return;
+    
+    // Por enquanto, usar os mesmos dados (futuramente pode ter dados HU específicos)
+    const spots = Object.keys(SPOTS_DATA);
+    const totalSpots = spots.length;
+    
+    const stacks = new Set();
+    spots.forEach(key => {
+        const match = key.match(/^(\d+)BB_/);
+        if (match) stacks.add(parseInt(match[1]));
+    });
+    
+    const el1 = document.getElementById('statSpotsHU');
+    const el2 = document.getElementById('statStacksHU');
+    const el3 = document.getElementById('phaseBadgeSpotsHU');
+    
+    if (el1) el1.textContent = totalSpots;
+    if (el2) el2.textContent = stacks.size;
+    if (el3) el3.textContent = totalSpots + ' spots';
+}
+
+function renderStackBarHU() {
+    const bar = document.getElementById('stackBarHU');
+    if (!bar) return;
+    bar.innerHTML = STACKS_HU.map(s => 
+        `<button class="stack-btn ${s === currentStackHU ? 'active' : ''}" onclick="selectStackHU(${s})">${s}BB</button>`
+    ).join('');
+}
+
+function selectStackHU(stack) {
+    currentStackHU = stack;
+    renderStackBarHU();
+    updateStacksHU();
+    resetToInitialStateHU();
+}
+
+function updateStacksHU() {
+    for (let i = 0; i < 2; i++) {
+        const el = document.getElementById(`seat-stack-hu-${i}`);
+        if (el) el.textContent = `${currentStackHU}BB`;
+    }
+    const label = document.getElementById('rangeStackLabelHU');
+    if (label) label.textContent = `${currentStackHU}BB`;
+    
+    const mesaLabel = document.getElementById('mesaStackLabelHU');
+    if (mesaLabel) mesaLabel.textContent = `${currentStackHU}BB`;
+}
+
+// === RANGE GRID HU ===
+function renderRangeGridHU() {
+    const grid = document.getElementById('rangeGridHU');
+    if (!grid) return;
+    grid.innerHTML = '';
+    
+    for (let i = 0; i < 13; i++) {
+        for (let j = 0; j < 13; j++) {
+            const cell = document.createElement('div');
+            cell.className = 'hand-cell';
+            
+            let hand;
+            if (i === j) {
+                hand = RANKS[i] + RANKS[j];
+            } else if (i < j) {
+                hand = RANKS[i] + RANKS[j] + 's';
+            } else {
+                hand = RANKS[j] + RANKS[i] + 'o';
+            }
+            
+            cell.dataset.hand = hand;
+            cell.innerHTML = hand;
+            cell.style.background = '#2d3748';
+            cell.style.color = '#4a5568';
+            
+            cell.addEventListener('click', () => selectHandHU(hand));
+            cell.addEventListener('mouseenter', () => showHandDetailsHU(hand));
+            
+            grid.appendChild(cell);
+        }
+    }
+}
+
+function selectHandHU(hand) {
+    selectedHandHU = hand;
+    document.querySelectorAll('#rangeGridHU .hand-cell').forEach(cell => {
+        cell.classList.toggle('selected', cell.dataset.hand === hand);
+    });
+    showHandDetailsHU(hand);
+}
+
+function showHandDetailsHU(hand) {
+    const nameEl = document.getElementById('handNameHU');
+    const evListEl = document.getElementById('handEvListHU');
+    
+    if (!currentSpotHU || !currentSpotHU.h || !currentSpotHU.h[hand]) {
+        if (nameEl) nameEl.textContent = hand;
+        if (evListEl) evListEl.innerHTML = '<div class="no-data">Sem dados</div>';
+        return;
+    }
+    
+    const hd = currentSpotHU.h[hand];
+    const actions = currentSpotHU.a || [];
+    
+    if (nameEl) nameEl.textContent = hand;
+    
+    if (evListEl) {
+        evListEl.innerHTML = actions.map((action, idx) => {
+            const ev = hd.evs && hd.evs[idx] !== undefined ? hd.evs[idx] : 0;
+            const freq = hd.played && hd.played[idx] !== undefined ? hd.played[idx] : 0;
+            const evClass = ev >= 0 ? 'positive' : 'negative';
+            const actionName = formatActionNameHU(action);
+            
+            return `
+                <div class="hand-ev-row">
+                    <span class="hand-ev-action">${actionName}</span>
+                    <span class="hand-ev-freq">${(freq * 100).toFixed(1)}%</span>
+                    <span class="hand-ev-value ${evClass}">${ev >= 0 ? '+' : ''}${ev.toFixed(3)}</span>
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+function formatActionNameHU(action) {
+    if (!action) return '?';
+    const type = action.type;
+    const amount = action.amount || 0;
+    const bb = amount / 20000;
+    
+    if (type === 'F') return 'Fold';
+    if (type === 'C') return bb > 0 ? `Call (${bb.toFixed(2)} BB)` : 'Check';
+    if (type === 'R') return `Raise (${bb.toFixed(2)} BB)`;
+    return type;
+}
+
+// === SELEÇÃO DE POSIÇÃO HU ===
+function selectPositionHU(posIndex) {
+    const posLetter = HU_POSITION_LETTERS[posIndex];
+    
+    // No HU, SB abre primeiro (RFI)
+    // SB = primeiro a agir = padrão _R
+    // BB = segundo a agir = padrão vazio (depende do que SB fez)
+    
+    let historyPattern;
+    if (posIndex === 0) {
+        // SB - primeiro a agir
+        historyPattern = 'R';
+    } else {
+        // BB - espera ação do SB (por enquanto, usar padrão de limp/raise)
+        historyPattern = 'FFFFFC'; // Usar padrão do BB normal por enquanto
+    }
+    
+    const spotKey = `${currentStackHU}BB_${posLetter}_${historyPattern}`;
+    
+    console.log('HU - Buscando spot:', spotKey);
+    
+    if (SPOTS_DATA && SPOTS_DATA[spotKey]) {
+        currentSpotHU = SPOTS_DATA[spotKey];
+        currentSpotKeyHU = spotKey;
+        navigationPathHU = [{ key: spotKey, position: posIndex }];
+        updateDisplayHU();
+        updateHeroBadgeHU(posIndex);
+    } else {
+        console.log('HU - Spot não encontrado, tentando alternativas...');
+        // Tentar encontrar qualquer spot para essa posição
+        const prefix = `${currentStackHU}BB_${posLetter}_`;
+        const found = Object.keys(SPOTS_DATA).find(k => k.startsWith(prefix));
+        if (found) {
+            currentSpotHU = SPOTS_DATA[found];
+            currentSpotKeyHU = found;
+            navigationPathHU = [{ key: found, position: posIndex }];
+            updateDisplayHU();
+            updateHeroBadgeHU(posIndex);
+        } else {
+            alert(`Nenhum spot encontrado para ${HU_POSITIONS[posIndex]} em ${currentStackHU}BB`);
+        }
+    }
+}
+
+function updateHeroBadgeHU(posIndex) {
+    const badge = document.getElementById('heroBadgeHU');
+    if (badge) {
+        badge.textContent = HU_POSITIONS[posIndex];
+        badge.className = 'position-badge';
+    }
+}
+
+// === ATUALIZAÇÃO DO DISPLAY HU ===
+function updateDisplayHU() {
+    updateRangeGridHU();
+    updateActionButtonsHU();
+    updateFrequencyListHU();
+    updateActionHistoryHU();
+    updateStatsDisplayHU();
+}
+
+function updateRangeGridHU() {
+    document.querySelectorAll('#rangeGridHU .hand-cell').forEach(cell => {
+        const hand = cell.dataset.hand;
+        const hd = currentSpotHU && currentSpotHU.h ? currentSpotHU.h[hand] : null;
+        
+        if (!hd) {
+            cell.style.background = '#2d3748';
+            cell.style.color = '#4a5568';
+            cell.innerHTML = hand;
+            return;
+        }
+        
+        const actions = currentSpotHU.a || [];
+        
+        // Modo Melhor EV HU
+        if (melhorEVAtivoHU) {
+            const melhor = getMelhorAcaoHU(hand);
+            if (!melhor || !melhor.action || melhor.action.type === 'F') {
+                cell.style.background = '#2d3748';
+                cell.style.color = '#4a5568';
+                cell.innerHTML = hand;
+                return;
+            }
+            
+            const category = getActionCategory(melhor.action, melhor.idx, currentStackHU);
+            const hex = ACTION_COLORS[category]?.hex || '#f97316';
+            cell.style.background = hex;
+            cell.style.color = '#000';
+            cell.innerHTML = hand;
+            return;
+        }
+        
+        // Range normal ou exploit
+        let played = hd.played || [];
+        if (exploitAtivoHU && exploitBonusHU !== 0) {
+            played = aplicarExploitHU(played, hd.evs);
+        }
+        
+        let totalActionFreq = 0;
+        let actionColors = [];
+        
+        played.forEach((freq, idx) => {
+            if (freq > 0 && actions[idx]) {
+                const actionType = actions[idx].type;
+                if (actionType !== 'F') {
+                    const category = getActionCategory(actions[idx], idx, currentStackHU);
+                    const hex = ACTION_COLORS[category]?.hex || '#f97316';
+                    actionColors.push({ freq, hex, type: actionType });
+                    totalActionFreq += freq;
+                }
+            }
+        });
+        
+        if (totalActionFreq === 0) {
+            cell.style.background = '#2d3748';
+            cell.style.color = '#4a5568';
+            cell.innerHTML = hand;
+            return;
+        }
+        
+        if (actionColors.length === 1) {
+            const color = actionColors[0].hex;
+            const freq = actionColors[0].freq;
+            
+            if (freq >= 0.95) {
+                cell.style.background = color;
+            } else {
+                const stopPoint = (1 - freq) * 100;
+                cell.style.background = `linear-gradient(90deg, #2d3748 ${stopPoint}%, ${color} ${stopPoint}%)`;
+            }
+        } else {
+            actionColors.sort((a, b) => b.freq - a.freq);
+            let gradientStops = [];
+            let currentStop = 0;
+            
+            const foldFreq = 1 - totalActionFreq;
+            if (foldFreq > 0.05) {
+                gradientStops.push(`#2d3748 ${foldFreq * 100}%`);
+                currentStop = foldFreq * 100;
+            }
+            
+            actionColors.forEach((ac) => {
+                const startStop = currentStop;
+                currentStop += ac.freq * 100;
+                gradientStops.push(`${ac.hex} ${startStop}%`);
+                gradientStops.push(`${ac.hex} ${currentStop}%`);
+            });
+            
+            cell.style.background = `linear-gradient(90deg, ${gradientStops.join(', ')})`;
+        }
+        
+        cell.style.color = '#000';
+        cell.innerHTML = hand;
+    });
+}
+
+function getMelhorAcaoHU(hand) {
+    if (!currentSpotHU || !currentSpotHU.h || !currentSpotHU.h[hand]) return null;
+    
+    const hd = currentSpotHU.h[hand];
+    const evs = hd.evs || [];
+    const actions = currentSpotHU.a || [];
+    
+    let melhorIdx = 0;
+    let melhorEV = -Infinity;
+    
+    evs.forEach((ev, idx) => {
+        if (ev > melhorEV) {
+            melhorEV = ev;
+            melhorIdx = idx;
+        }
+    });
+    
+    return { idx: melhorIdx, ev: melhorEV, action: actions[melhorIdx] };
+}
+
+function aplicarExploitHU(played, evs) {
+    if (!played || !evs || exploitBonusHU === 0) return played;
+    
+    const novasFreqs = [...played];
+    const bonus = exploitBonusHU / 100;
+    const actions = currentSpotHU.a || [];
+    
+    actions.forEach((action, idx) => {
+        if (action.type === 'R') {
+            novasFreqs[idx] = Math.max(0, Math.min(1, played[idx] + bonus * 0.3));
+        } else if (action.type === 'F') {
+            novasFreqs[idx] = Math.max(0, Math.min(1, played[idx] - bonus * 0.2));
+        } else if (action.type === 'C') {
+            novasFreqs[idx] = Math.max(0, Math.min(1, played[idx] - bonus * 0.1));
+        }
+    });
+    
+    const soma = novasFreqs.reduce((a, b) => a + b, 0);
+    if (soma > 0) {
+        novasFreqs.forEach((f, i) => novasFreqs[i] = f / soma);
+    }
+    
+    return novasFreqs;
+}
+
+function updateActionButtonsHU() {
+    const container = document.getElementById('actionButtonsHU');
+    if (!container || !currentSpotHU) {
+        if (container) container.innerHTML = '<button class="action-btn fold">Fold</button>';
+        return;
+    }
+    
+    const actions = currentSpotHU.a || [];
+    
+    container.innerHTML = actions.map((action, idx) => {
+        const hasNext = action.node && SPOTS_DATA[`${currentStackHU}BB_${currentSpotKeyHU?.split('_')[1]}_${getHistoryFromKey(currentSpotKeyHU)}${action.type}`];
+        const colorClass = getActionColorClass(action, idx);
+        const label = formatActionNameHU(action);
+        
+        return `<button class="action-btn ${colorClass} ${hasNext ? 'has-next' : ''}" 
+                        onclick="selectActionHU(${idx})">${label}</button>`;
+    }).join('');
+}
+
+function getHistoryFromKey(key) {
+    if (!key) return '';
+    const parts = key.split('_');
+    return parts.length > 2 ? parts.slice(2).join('_') : '';
+}
+
+function selectActionHU(actionIndex) {
+    if (!currentSpotHU || !currentSpotHU.a) return;
+    
+    const action = currentSpotHU.a[actionIndex];
+    if (!action) return;
+    
+    const currentHistory = getHistoryFromKey(currentSpotKeyHU);
+    const newHistory = currentHistory + action.type;
+    
+    // Determinar próxima posição
+    const currentPosLetter = currentSpotKeyHU?.split('_')[1] || 'S';
+    const nextPosLetter = currentPosLetter === 'S' ? 'X' : 'S';
+    
+    const nextKey = `${currentStackHU}BB_${nextPosLetter}_${newHistory}`;
+    
+    if (SPOTS_DATA && SPOTS_DATA[nextKey]) {
+        currentSpotHU = SPOTS_DATA[nextKey];
+        currentSpotKeyHU = nextKey;
+        navigationPathHU.push({ key: nextKey, action: action.type });
+        updateDisplayHU();
+        
+        const posIndex = nextPosLetter === 'S' ? 0 : 1;
+        updateHeroBadgeHU(posIndex);
+    } else {
+        console.log('HU - Próximo spot não encontrado:', nextKey);
+    }
+}
+
+function updateFrequencyListHU() {
+    const container = document.getElementById('freqListHU');
+    if (!container || !currentSpotHU) {
+        if (container) container.innerHTML = '';
+        return;
+    }
+    
+    const actions = currentSpotHU.a || [];
+    const freqs = calculateRangeFrequenciesHU();
+    
+    container.innerHTML = actions.map((action, idx) => {
+        const freq = freqs[idx] || 0;
+        const colorClass = getActionColorClass(action, idx);
+        const label = formatActionNameHU(action);
+        
+        return `
+            <div class="freq-row">
+                <div class="freq-color ${colorClass}"></div>
+                <span class="freq-label">${label}</span>
+                <span class="freq-value">${(freq * 100).toFixed(1)}%</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function calculateRangeFrequenciesHU() {
+    if (!currentSpotHU || !currentSpotHU.h) return [];
+    
+    const actions = currentSpotHU.a || [];
+    const totals = new Array(actions.length).fill(0);
+    let handCount = 0;
+    
+    for (const hand in currentSpotHU.h) {
+        const hd = currentSpotHU.h[hand];
+        if (hd.played) {
+            hd.played.forEach((freq, idx) => {
+                totals[idx] += freq;
+            });
+            handCount++;
+        }
+    }
+    
+    return totals.map(t => handCount > 0 ? t / handCount : 0);
+}
+
+function updateActionHistoryHU() {
+    const container = document.getElementById('actionHistoryFlowHU');
+    if (!container) return;
+    
+    if (navigationPathHU.length === 0) {
+        container.innerHTML = `
+            <span class="action-position">SB</span>
+            <span class="action-badge action-unknown">?</span>
+            <span class="action-arrow">→</span>
+            <span class="action-position">BB</span>
+            <span class="action-badge action-unknown">?</span>
+        `;
+        return;
+    }
+    
+    // Construir histórico baseado na navegação
+    let html = '';
+    const history = getHistoryFromKey(currentSpotKeyHU) || '';
+    
+    for (let i = 0; i < history.length; i++) {
+        const action = history[i];
+        const pos = i % 2 === 0 ? 'SB' : 'BB';
+        const colorClass = action === 'F' ? 'action-fold' : action === 'C' ? 'action-call' : 'action-raise';
+        const label = action === 'F' ? 'Fold' : action === 'C' ? 'Call' : 'Raise';
+        
+        html += `<span class="action-position">${pos}</span>`;
+        html += `<span class="action-badge ${colorClass}">${label}</span>`;
+        if (i < history.length - 1) {
+            html += `<span class="action-arrow">→</span>`;
+        }
+    }
+    
+    // Adicionar posição atual
+    const currentPos = currentSpotKeyHU?.split('_')[1];
+    const currentPosName = currentPos === 'S' ? 'SB' : 'BB';
+    if (history.length > 0) {
+        html += `<span class="action-arrow">→</span>`;
+    }
+    html += `<span class="action-position">${currentPosName}</span>`;
+    html += `<span class="action-badge action-unknown">?</span>`;
+    
+    container.innerHTML = html;
+}
+
+function updateStatsDisplayHU() {
+    const posEl = document.getElementById('statsPositionHU');
+    const badgesEl = document.getElementById('statsBadgesHU');
+    
+    if (!currentSpotHU) {
+        if (posEl) posEl.textContent = '?';
+        if (badgesEl) badgesEl.innerHTML = '<div class="stat-badge fold">F --</div><div class="stat-badge call">C --</div><div class="stat-badge raise">R --</div>';
+        return;
+    }
+    
+    const currentPos = currentSpotKeyHU?.split('_')[1];
+    const posName = currentPos === 'S' ? 'SB' : 'BB';
+    if (posEl) posEl.textContent = posName;
+    
+    const freqs = calculateRangeFrequenciesHU();
+    const actions = currentSpotHU.a || [];
+    
+    let foldFreq = 0, callFreq = 0, raiseFreq = 0;
+    
+    actions.forEach((action, idx) => {
+        if (action.type === 'F') foldFreq = freqs[idx] || 0;
+        else if (action.type === 'C') callFreq = freqs[idx] || 0;
+        else if (action.type === 'R') raiseFreq += freqs[idx] || 0;
+    });
+    
+    if (badgesEl) {
+        badgesEl.innerHTML = `
+            <div class="stat-badge fold">F ${(foldFreq * 100).toFixed(0)}%</div>
+            <div class="stat-badge call">C ${(callFreq * 100).toFixed(0)}%</div>
+            <div class="stat-badge raise">R ${(raiseFreq * 100).toFixed(0)}%</div>
+        `;
+    }
+}
+
+// === NAVEGAÇÃO HU ===
+function goBackHU() {
+    if (navigationPathHU.length > 1) {
+        navigationPathHU.pop();
+        const prev = navigationPathHU[navigationPathHU.length - 1];
+        currentSpotKeyHU = prev.key;
+        currentSpotHU = SPOTS_DATA[prev.key];
+        updateDisplayHU();
+        
+        const posLetter = prev.key.split('_')[1];
+        const posIndex = posLetter === 'S' ? 0 : 1;
+        updateHeroBadgeHU(posIndex);
+    } else {
+        resetToInitialStateHU();
+    }
+}
+
+function resetToInitialStateHU() {
+    currentSpotHU = null;
+    currentSpotKeyHU = null;
+    selectedHandHU = null;
+    navigationPathHU = [];
+    
+    const badge = document.getElementById('heroBadgeHU');
+    if (badge) {
+        badge.textContent = '?';
+        badge.className = 'position-badge';
+    }
+    
+    const posLabel = document.getElementById('rangePositionHU');
+    if (posLabel) posLabel.textContent = '?';
+    
+    document.querySelectorAll('#rangeGridHU .hand-cell').forEach(cell => {
+        cell.style.background = '#2d3748';
+        cell.style.color = '#4a5568';
+        cell.classList.remove('selected');
+    });
+    
+    const actionBtns = document.getElementById('actionButtonsHU');
+    if (actionBtns) actionBtns.innerHTML = '<button class="action-btn fold">Fold</button>';
+    
+    const freqList = document.getElementById('freqListHU');
+    if (freqList) freqList.innerHTML = '';
+    
+    const historyFlow = document.getElementById('actionHistoryFlowHU');
+    if (historyFlow) {
+        historyFlow.innerHTML = `
+            <span class="action-position">SB</span>
+            <span class="action-badge action-unknown">?</span>
+            <span class="action-arrow">→</span>
+            <span class="action-position">BB</span>
+            <span class="action-badge action-unknown">?</span>
+        `;
+    }
+    
+    melhorEVAtivoHU = false;
+    exploitAtivoHU = false;
+    exploitBonusHU = 0;
+    updateAnalysisButtonsHU();
+}
+
+// === MODOS DE ANÁLISE HU ===
+function toggleMelhorEVHU() {
+    melhorEVAtivoHU = !melhorEVAtivoHU;
+    
+    if (melhorEVAtivoHU) {
+        exploitAtivoHU = false;
+        const controls = document.getElementById('exploitControlsHU');
+        if (controls) controls.style.display = 'none';
+    }
+    
+    updateAnalysisButtonsHU();
+    updateRangeGridHU();
+}
+
+function toggleExploitHU() {
+    exploitAtivoHU = !exploitAtivoHU;
+    
+    if (exploitAtivoHU) {
+        melhorEVAtivoHU = false;
+        const controls = document.getElementById('exploitControlsHU');
+        if (controls) controls.style.display = 'block';
+        exploitBonusHU = parseInt(document.getElementById('exploitSliderHU')?.value) || 1;
+    } else {
+        const controls = document.getElementById('exploitControlsHU');
+        if (controls) controls.style.display = 'none';
+        exploitBonusHU = 0;
+    }
+    
+    updateAnalysisButtonsHU();
+    updateRangeGridHU();
+}
+
+function updateExploitHU(value) {
+    exploitBonusHU = parseInt(value) || 0;
+    const display = document.getElementById('exploitValueDisplayHU');
+    if (display) {
+        display.textContent = (exploitBonusHU > 0 ? '+' : '') + exploitBonusHU + '%';
+    }
+    updateAnalysisButtonsHU();
+    updateRangeGridHU();
+}
+
+function updateAnalysisButtonsHU() {
+    const btnMelhorEV = document.getElementById('btnMelhorEVHU');
+    const btnExploit = document.getElementById('btnExploitHU');
+    const statusEl = document.getElementById('analysisStatusHU');
+    
+    if (!btnMelhorEV || !btnExploit || !statusEl) return;
+    
+    btnMelhorEV.classList.remove('active', 'active-exploit');
+    btnExploit.classList.remove('active', 'active-exploit');
+    statusEl.classList.remove('exploit', 'gto');
+    
+    if (melhorEVAtivoHU) {
+        btnMelhorEV.classList.add('active');
+        btnMelhorEV.innerHTML = `
+            <span class="analysis-icon-bar">
+                <span class="bar bar-green"></span>
+                <span class="bar bar-yellow"></span>
+                <span class="bar bar-red"></span>
+            </span>
+            <span>GTO Ativo</span>`;
+        statusEl.innerHTML = '<span class="status-icon">📊</span><span>Modo GTO</span>';
+        statusEl.classList.add('gto');
+    } else {
+        btnMelhorEV.innerHTML = `
+            <span class="analysis-icon-bar">
+                <span class="bar bar-green"></span>
+                <span class="bar bar-yellow"></span>
+                <span class="bar bar-red"></span>
+            </span>
+            <span>Melhor EV</span>`;
+    }
+    
+    if (exploitAtivoHU) {
+        btnExploit.classList.add('active-exploit');
+        btnExploit.innerHTML = '<span class="analysis-icon-tent">🎪</span><span>Exploit Ativo</span>';
+        statusEl.innerHTML = '<span class="status-icon">🎪</span><span>Exploit ' + (exploitBonusHU > 0 ? '+' : '') + exploitBonusHU + '%</span>';
+        statusEl.classList.add('exploit');
+    } else {
+        btnExploit.innerHTML = '<span class="analysis-icon-tent">🎪</span><span>Ativar Exploit</span>';
+    }
+    
+    if (!melhorEVAtivoHU && !exploitAtivoHU) {
+        statusEl.innerHTML = '<span class="status-icon">📊</span><span>Range Original</span>';
+    }
+}
+
+console.log('Módulo HU carregado');
