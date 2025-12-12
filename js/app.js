@@ -1295,7 +1295,9 @@ function showHandDetailsHU(hand) {
             const ev = hd.evs && hd.evs[idx] !== undefined ? hd.evs[idx] : 0;
             const freq = hd.played && hd.played[idx] !== undefined ? hd.played[idx] : 0;
             const evClass = ev >= 0 ? 'positive' : 'negative';
-            const actionName = formatActionNameHU(action);
+            const label = getActionLabel(action, currentStackHU);
+            const amount = action.amount ? formatAmount(action.amount, currentStackHU) : '';
+            const actionName = label + (amount ? ' ' + amount : '');
             
             return `
                 <div class="hand-ev-row">
@@ -1306,18 +1308,6 @@ function showHandDetailsHU(hand) {
             `;
         }).join('');
     }
-}
-
-function formatActionNameHU(action) {
-    if (!action) return '?';
-    const type = action.type;
-    const amount = action.amount || 0;
-    const bb = amount / 20000;
-    
-    if (type === 'F') return 'Fold';
-    if (type === 'C') return bb > 0 ? `Call (${bb.toFixed(2)} BB)` : 'Check';
-    if (type === 'R') return `Raise (${bb.toFixed(2)} BB)`;
-    return type;
 }
 
 // === SELEÇÃO DE POSIÇÃO HU ===
@@ -1375,9 +1365,9 @@ function updateHeroBadgeHU(posIndex) {
 // === ATUALIZAÇÃO DO DISPLAY HU ===
 function updateDisplayHU() {
     updateRangeGridHU();
-    updateActionButtonsHU();
+    updateActionsHU();
     updateFrequencyListHU();
-    updateActionHistoryHU();
+    updateHistoryHU();
     updateStatsDisplayHU();
 }
 
@@ -1522,27 +1512,32 @@ function aplicarExploitHU(played, evs) {
     return novasFreqs;
 }
 
-function updateActionButtonsHU() {
-    const container = document.getElementById('actionButtonsHU');
-    if (!container || !currentSpotHU) {
-        if (container) container.innerHTML = '<button class="action-btn fold">Fold</button>';
+// === AÇÕES HU ===
+function updateActionsHU() {
+    const row = document.getElementById('actionsRowHU');
+    if (!row) return;
+    
+    if (!currentSpotHU || !currentSpotHU.a) {
+        row.innerHTML = '';
         return;
     }
     
-    const actions = currentSpotHU.a || [];
-    
-    container.innerHTML = actions.map((action, idx) => {
-        const nextHistory = getHistoryFromKey(currentSpotKeyHU) + action.type;
+    row.innerHTML = currentSpotHU.a.map((a, i) => {
+        const label = getActionLabel(a, currentStackHU);
+        const btnClass = getButtonClass(a, i, currentStackHU);
+        const amount = a.amount ? formatAmount(a.amount, currentStackHU) : '';
+        
+        // Verificar se tem próximo nó
+        const nextHistory = getHistoryFromKey(currentSpotKeyHU) + a.type;
         const currentPosLetter = currentSpotKeyHU?.split('_')[1] || 'U';
         const nextPosLetter = currentPosLetter === 'U' ? 'H' : 'U';
         const nextKey = `${currentStackHU}BB_${nextPosLetter}_${nextHistory}`;
-        const hasNext = action.node && SPOTS_DATA_HU && SPOTS_DATA_HU[nextKey];
+        const hasNext = a.node && SPOTS_DATA_HU && SPOTS_DATA_HU[nextKey];
         
-        const btnClass = getButtonClass(action, idx, currentStackHU);
-        const label = formatActionNameHU(action);
-        
-        return `<button class="action-btn ${btnClass} ${hasNext ? 'has-next' : ''}" 
-                        onclick="selectActionHU(${idx})">${label}</button>`;
+        return `<button class="action-btn ${btnClass} ${hasNext ? 'has-next' : ''}" onclick="executeActionHU(${i})">
+            <span>${label}</span>
+            ${amount ? `<span class="btn-amount">${amount}</span>` : ''}
+        </button>`;
     }).join('');
 }
 
@@ -1552,16 +1547,22 @@ function getHistoryFromKey(key) {
     return parts.length > 2 ? parts.slice(2).join('_') : '';
 }
 
-function selectActionHU(actionIndex) {
+function executeActionHU(actionIndex) {
     if (!currentSpotHU || !currentSpotHU.a) return;
     
     const action = currentSpotHU.a[actionIndex];
     if (!action) return;
     
+    // Fold não navega
+    if (action.type === 'F') {
+        alert('Você foldou. Selecione outra posição para continuar.');
+        return;
+    }
+    
     const currentHistory = getHistoryFromKey(currentSpotKeyHU);
     const newHistory = currentHistory + action.type;
     
-    // Determinar próxima posição (HU: U = SB/BTN, X = BB)
+    // Determinar próxima posição (HU: U = SB/BTN, H = BB)
     const currentPosLetter = currentSpotKeyHU?.split('_')[1] || 'U';
     const nextPosLetter = currentPosLetter === 'U' ? 'H' : 'U';
     
@@ -1594,12 +1595,13 @@ function updateFrequencyListHU() {
         const freq = freqs[idx] || 0;
         const category = getActionCategory(action, idx, currentStackHU);
         const colorHex = ACTION_COLORS[category]?.hex || '#64748b';
-        const label = formatActionNameHU(action);
+        const label = getActionLabel(action, currentStackHU);
+        const amount = action.amount ? formatAmount(action.amount, currentStackHU) : '';
         
         return `
-            <div class="freq-row">
+            <div class="freq-item">
                 <div class="freq-color" style="background: ${colorHex}"></div>
-                <span class="freq-label">${label}</span>
+                <span class="freq-label">${label}${amount ? ' ' + amount : ''}</span>
                 <span class="freq-value" style="color: ${colorHex}">${(freq * 100).toFixed(1)}%</span>
             </div>
         `;
@@ -1626,48 +1628,74 @@ function calculateRangeFrequenciesHU() {
     return totals.map(t => handCount > 0 ? t / handCount : 0);
 }
 
-function updateActionHistoryHU() {
-    const container = document.getElementById('actionHistoryFlowHU');
-    if (!container) return;
+// === HISTÓRICO HU ===
+function updateHistoryHU() {
+    const content = document.getElementById('historyContentHU');
+    if (!content) return;
     
-    if (navigationPathHU.length === 0) {
-        container.innerHTML = `
-            <span class="action-position">SB</span>
-            <span class="action-badge action-unknown">?</span>
-            <span class="action-arrow">→</span>
-            <span class="action-position">BB</span>
-            <span class="action-badge action-unknown">?</span>
-        `;
+    if (!currentSpotKeyHU) {
+        content.innerHTML = '<div class="history-empty">Selecione uma posição para iniciar</div>';
         return;
     }
     
-    // Construir histórico baseado na navegação
+    // Extrair informações da key: 50BB_U_R ou 50BB_H_RC
+    const parts = currentSpotKeyHU.split('_');
+    if (parts.length < 3) {
+        content.innerHTML = '<div class="history-empty">-</div>';
+        return;
+    }
+    
+    const history = parts[2]; // Ex: R, RC, RR, etc.
+    const currentPosLetter = parts[1];
+    const currentPosName = currentPosLetter === 'U' ? 'SB' : 'BB';
+    
+    // Construir histórico visual
+    // No HU: posição alterna entre SB (U) e BB (H)
     let html = '';
-    const history = getHistoryFromKey(currentSpotKeyHU) || '';
+    let posIdx = 0; // 0 = SB, 1 = BB
     
     for (let i = 0; i < history.length; i++) {
         const action = history[i];
-        const pos = i % 2 === 0 ? 'SB' : 'BB';
-        const colorClass = action === 'F' ? 'action-fold' : action === 'C' ? 'action-call' : 'action-raise';
-        const label = action === 'F' ? 'Fold' : action === 'C' ? 'Call' : 'Raise';
+        const posName = posIdx === 0 ? 'SB' : 'BB';
         
-        html += `<span class="action-position">${pos}</span>`;
-        html += `<span class="action-badge ${colorClass}">${label}</span>`;
-        if (i < history.length - 1) {
-            html += `<span class="action-arrow">→</span>`;
+        let actionClass = '';
+        let actionText = '';
+        
+        if (action === 'F') {
+            actionClass = 'fold';
+            actionText = 'Fold';
+        } else if (action === 'R') {
+            actionClass = 'raise';
+            actionText = 'Raise';
+        } else if (action === 'C') {
+            actionClass = 'call';
+            actionText = 'Call';
+        } else if (action === 'K' || action === 'X') {
+            actionClass = 'check';
+            actionText = 'Check';
         }
+        
+        html += `<div class="history-item">
+            <span class="history-position">${posName}</span>
+            <span class="history-action ${actionClass}">${actionText}</span>
+        </div>`;
+        
+        if (i < history.length - 1) {
+            html += '<span class="history-arrow">→</span>';
+        }
+        
+        // Alternar posição
+        posIdx = posIdx === 0 ? 1 : 0;
     }
     
-    // Adicionar posição atual
-    const currentPos = currentSpotKeyHU?.split('_')[1];
-    const currentPosName = currentPos === 'U' ? 'SB' : 'BB';
-    if (history.length > 0) {
-        html += `<span class="action-arrow">→</span>`;
-    }
-    html += `<span class="action-position">${currentPosName}</span>`;
-    html += `<span class="action-badge action-unknown">?</span>`;
+    // Adicionar posição atual (hero)
+    html += '<span class="history-arrow">→</span>';
+    html += `<div class="history-item history-current">
+        <span class="history-position">${currentPosName}</span>
+        <span class="history-action" style="background: #f1c40f; color: #000;">?</span>
+    </div>`;
     
-    container.innerHTML = html;
+    content.innerHTML = html;
 }
 
 function updateStatsDisplayHU() {
@@ -1742,21 +1770,15 @@ function resetToInitialStateHU() {
         cell.classList.remove('selected');
     });
     
-    const actionBtns = document.getElementById('actionButtonsHU');
-    if (actionBtns) actionBtns.innerHTML = '<button class="action-btn fold">Fold</button>';
+    const actionsRow = document.getElementById('actionsRowHU');
+    if (actionsRow) actionsRow.innerHTML = '';
     
     const freqList = document.getElementById('freqListHU');
     if (freqList) freqList.innerHTML = '';
     
-    const historyFlow = document.getElementById('actionHistoryFlowHU');
-    if (historyFlow) {
-        historyFlow.innerHTML = `
-            <span class="action-position">SB</span>
-            <span class="action-badge action-unknown">?</span>
-            <span class="action-arrow">→</span>
-            <span class="action-position">BB</span>
-            <span class="action-badge action-unknown">?</span>
-        `;
+    const historyContent = document.getElementById('historyContentHU');
+    if (historyContent) {
+        historyContent.innerHTML = '<div class="history-empty">Selecione uma posição para iniciar</div>';
     }
     
     melhorEVAtivoHU = false;

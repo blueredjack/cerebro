@@ -404,14 +404,10 @@
                 <div class="mesa-hint">💡 Clique em uma posição para ver seu range</div>
 
                 <!-- Histórico de Ações HU -->
-                <div class="action-history-panel">
-                    <div class="action-history-title">HISTÓRICO DE AÇÕES</div>
-                    <div class="action-history-flow" id="actionHistoryFlowHU">
-                        <span class="action-position">SB</span>
-                        <span class="action-badge action-unknown">?</span>
-                        <span class="action-arrow">→</span>
-                        <span class="action-position">BB</span>
-                        <span class="action-badge action-unknown">?</span>
+                <div class="history-panel" id="historyPanelHU">
+                    <div class="history-title">HISTÓRICO DE AÇÕES</div>
+                    <div class="history-content" id="historyContentHU">
+                        <div class="history-empty">Selecione uma posição para iniciar</div>
                     </div>
                 </div>
 
@@ -455,16 +451,11 @@
                 </div>
                 <div class="range-grid" id="rangeGridHU"></div>
                 
-                <!-- Action Buttons HU -->
-                <div class="action-section">
-                    <div class="action-section-title">AÇÕES DISPONÍVEIS</div>
-                    <div class="action-buttons" id="actionButtonsHU">
-                        <button class="action-btn fold">Fold</button>
-                    </div>
-                    <div class="action-hint">
-                        <span class="hint-dot"></span>
-                        <span>Borda azul = próximo nó disponível</span>
-                    </div>
+                <!-- Actions HU -->
+                <div class="actions-panel" id="actionsPanelHU">
+                    <div class="actions-title">AÇÕES DISPONÍVEIS</div>
+                    <div class="actions-row" id="actionsRowHU"></div>
+                    <div class="actions-hint"><span class="dot"></span>Borda azul = próximo nó disponível</div>
                 </div>
             </div>
 
