@@ -1,6 +1,6 @@
 # 🧠 CEREBRO - Visualizador de Ranges MTT
 
-Sistema de visualização de ranges para MTT (Multi-Table Tournament) de poker.
+Sistema avançado de visualização de ranges para MTT (Multi-Table Tournament) de poker.
 
 **🌐 URL Produção:** [cerebro-brown-beta.vercel.app](https://cerebro-brown-beta.vercel.app)  
 **📦 Repositório:** [github.com/blueredjack/cerebro](https://github.com/blueredjack/cerebro)
@@ -11,11 +11,12 @@ Sistema de visualização de ranges para MTT (Multi-Table Tournament) de poker.
 
 | Item | Valor |
 |------|-------|
-| **Versão** | 1.3.0 |
-| **Última Atualização** | 2025-12-08 |
+| **Versão** | 2.0.0 |
+| **Última Atualização** | 2025-12-12 |
 | **Status** | ✅ Online |
-| **Spots Ativos** | 668 |
-| **Modo Disponível** | VANILLA - CEV Symmetric |
+| **Spots 7-MAX** | 700+ |
+| **Spots HU** | 200+ |
+| **Modos Disponíveis** | VANILLA (CEV Symmetric), HU |
 
 ---
 
@@ -23,13 +24,11 @@ Sistema de visualização de ranges para MTT (Multi-Table Tournament) de poker.
 
 ```
 cerebro/
-├── index.html          # Página principal (3 telas: Home, Fases, Visualizador)
-├── css/
-│   └── styles.css      # Estilos (dark theme, responsivo, mesa dinâmica)
-├── js/
-│   └── app.js          # Lógica da aplicação (navegação, cores, ações)
-├── data/
-│   └── spots.js        # Dados dos spots (~9MB, 668 spots)
+├── index.html          # Página principal (Home, Fases, 7-MAX, HU)
+├── styles.css          # Estilos (dark theme, responsivo, mesa dinâmica)
+├── app.js              # Lógica da aplicação
+├── current_spots.js    # Dados 7-MAX (~9MB, 700+ spots)
+├── spots_hu.js         # Dados HU (~500KB, 200+ spots)
 └── README.md           # Documentação e changelog
 ```
 
@@ -37,179 +36,223 @@ cerebro/
 
 ## 🎯 Funcionalidades Implementadas
 
-### Tela 1 - Home
+### Tela Home
 - [x] Logo animado CEREBRO
 - [x] Cards de categoria (PKO 🎯, VANILLA ⚔️, Drill 🎮, AULAS 🔍)
 - [x] VANILLA ativo, outros "Em breve"
 
-### Tela 2 - Seleção de Fase
-- [x] CEV Symmetric (668 spots) - ATIVO
+### Tela Seleção de Fase
+- [x] CEV Symmetric 7-MAX - ATIVO
+- [x] Heads-Up (HU) - ATIVO
 - [x] Fases futuras listadas (SOON)
 
-### Tela 3 - Visualizador de Ranges
+### Visualizador 7-MAX
 - [x] Mesa 7-max com posições clicáveis
-- [x] Range grid 13x13 com cores dinâmicas (gradiente vertical)
-- [x] Navegação entre spots (RFI → Facing Raise → 3bet, etc.)
-- [x] Sistema de cores padronizado para ações
-- [x] Atualização dinâmica da mesa (hero amarelo, folded)
+- [x] **Badges de ação** acima de cada posição (OPEN, 3BET, 4BET, FOLD, etc.)
+- [x] Range grid 13x13 com cores dinâmicas
+- [x] **Navegação por sequência** (diferencia múltiplos sizings de raise)
+- [x] **Modo Melhor EV** - mostra apenas a ação de maior EV
+- [x] **Modo Exploit** - ajusta ranges com bonus de EV
 - [x] Painel de frequências com hover filtering
 - [x] Painel de histórico de ações
 - [x] Detalhes de EV por mão
-- [x] Barra de stacks (5BB - 100BB) com fonte maior
-- [x] Layout responsivo (adapta ao tamanho da janela)
+- [x] Barra de stacks (5BB - 100BB)
 - [x] Dealer button na borda da mesa
 
----
-
-## 🎨 Sistema de Cores Padronizado
-
-| Ação | Cor | Hex | Classe CSS |
-|------|-----|-----|------------|
-| Fold | Cinza | `#4a5568` | `btn-fold` |
-| Check | Azul | `#3b82f6` | `btn-check` |
-| Call | Ciano | `#00bfff` | `btn-call` |
-| 1º Raise | Amarelo | `#ffff00` | `btn-raise-1` |
-| 2º Raise | Verde | `#00ff00` | `btn-raise-2` |
-| 3º Raise | Roxo | `#9333ea` | `btn-raise-3` |
-| 4º Raise+ | Rosa bebê | `#f9a8d4` | `btn-raise-4` |
-| All-in (≥90% stack) | Vermelho + borda dourada | `#dc2626` | `btn-allin` |
+### Visualizador HU (Heads-Up)
+- [x] Mesa HU com SB e BB
+- [x] Badges de ação (OPEN, 3BET, 4BET, ALL-IN)
+- [x] Escala específica HU (40M vs 100K do 7-MAX)
+- [x] Navegação por path (U_R, H_C, H_R, U_CR, U_RR)
+- [x] Modo Melhor EV
+- [x] Painel de histórico de ações
+- [x] Detecção automática de All-in (≥90% stack)
 
 ---
 
-## 🔄 Lógica de Navegação
+## 🏷️ Badges de Ação
 
-### Padrão de Chaves dos Spots
-```
-{stack}BB_{posição}_{histórico}
+Cada posição mostra a ação tomada com badge colorido:
 
-Exemplos:
-- 100BB_U_R     = EP RFI (primeiro a agir)
-- 100BB_H_R     = MP facing EP raise
-- 100BB_C_RF    = HJ facing raise, MP folded
-- 100BB_B_FFF   = CO RFI (EP, MP, HJ foldaram)
-- 100BB_S_FFFR  = BTN facing CO raise
-- 100BB_C_RR    = HJ facing 3bet
+| Ação | Cor | Exemplo |
+|------|-----|---------|
+| FOLD | Cinza | `FOLD` |
+| OPEN | Amarelo | `OPEN 2.5` |
+| CALL | Ciano | `CALL 8.75` |
+| 3BET | Verde | `3BET 11.25` |
+| 4BET | Laranja | `4BET 28` |
+| 5BET+ | Vermelho | `5BET+ 60` |
+| ALL-IN | Vermelho pulsante | `ALL-IN` |
+
+---
+
+## 🎨 Sistema de Cores
+
+| Ação | Cor | Hex | Uso |
+|------|-----|-----|-----|
+| Fold | Cinza | `#4a5568` | Grid e botões |
+| Check | Azul | `#3b82f6` | Botões |
+| Call | Ciano | `#00bfff` | Grid e botões |
+| 1º Raise | Amarelo | `#ffff00` | Open raise |
+| 2º Raise | Verde | `#00ff00` | 3bet |
+| 3º Raise | Roxo | `#9333ea` | 4bet |
+| 4º Raise+ | Rosa | `#f9a8d4` | 5bet+ |
+| All-in | Vermelho | `#dc2626` | ≥90% stack |
+
+---
+
+## 🔄 Navegação por Sequência
+
+A navegação usa a **sequência completa de ações** (tipo + valor) para encontrar o próximo spot:
+
+```javascript
+// Exemplo: SB tem opções de 3bet 8.75BB e 11.25BB
+// Ao clicar em cada um, navega para spots DIFERENTES do BB
+
+SB escolhe Raise 8.75BB:
+  Sequência: [F, F, F, F, R 2.5BB, R 8.75BB]
+  → Encontra: 100BB_X_FFFFRR (com 3bet 8.75BB)
+
+SB escolhe Raise 11.25BB:
+  Sequência: [F, F, F, F, R 2.5BB, R 11.25BB]
+  → Encontra: spot diferente ou "não disponível"
 ```
 
-### Posições
-| Letra | Posição | Índice |
-|-------|---------|--------|
-| U | EP (UTG) | 0 |
-| H | MP (HJ-1) | 1 |
-| C | HJ | 2 |
-| B | CO | 3 |
-| S | BTN | 4 |
-| D | SB | 5 |
-| X | BB | 6 |
-
-### Fluxo de Ações
-```
-EP RFI (U_R) + Raise → MP facing raise (H_R)
-EP RFI (U_R) + Fold  → MP assume RFI (H_F)
-CO RFI (B_FFF) + Raise → BTN facing raise (S_FFFR)
-MP facing (H_R) + Fold → HJ facing (C_RF)
-MP facing (H_R) + 3bet → HJ facing 3bet (C_RR)
-```
+### Funções de Navegação
+- `findSpotBySequence()` - Busca spot pela sequência exata
+- `sequencesMatch()` - Compara sequências com tolerância de 5%
+- `executeAction()` - Executa ação e navega
 
 ---
 
 ## 📋 CHANGELOG
 
+### [2.0.0] - 2025-12-12
+**🎯 Badges de ação, navegação por sequência e melhorias críticas**
+
+#### Adicionado
+- **Badges de ação** acima de cada posição na mesa
+  - Mostra: FOLD, OPEN X, 3BET X, 4BET X, 5BET+ X, ALL-IN
+  - Cores diferenciadas por tipo de ação
+  - Animação pulsante no ALL-IN
+- **Navegação por sequência** - diferencia múltiplos sizings de raise
+  - `findSpotBySequence()` - busca por sequência exata
+  - `sequencesMatch()` - comparação com tolerância de 5%
+- **Suporte a agregação de dados** - spots podem vir de diferentes uploads/datas
+
+#### Corrigido
+- Navegação agora diferencia corretamente entre raises de tamanhos diferentes
+- Mesma ação (R) com valores diferentes vai para spots diferentes
+
+---
+
+### [1.5.0] - 2025-12-12
+**🃏 Visualizador HU (Heads-Up) completo**
+
+#### Adicionado
+- **Tela HU** - visualizador dedicado para Heads-Up
+- **Escala HU** - 40M (vs 100K do 7-MAX)
+- **Navegação HU** - paths específicos (U_R, H_C, H_R, U_CR, U_RR)
+- **Cores HU** - sistema de cores adaptado
+- **Modo Melhor EV HU** - toggle independente
+- **Histórico HU** - painel de ações separado
+
+---
+
+### [1.4.0] - 2025-12-11
+**⚡ Modo Melhor EV e Exploit**
+
+#### Adicionado
+- **Modo Melhor EV** - mostra apenas a ação de maior EV para cada mão
+- **Modo Exploit** - ajusta EVs com bonus configurável
+- Toggle buttons para ativar/desativar modos
+- Indicador visual quando modos estão ativos
+
+---
+
 ### [1.3.0] - 2025-12-08
 **🎨 Melhorias visuais, responsividade e histórico de ações**
 
 #### Adicionado
-- **Histórico de ações** - Painel mostrando sequência de ações do spot atual
-- **Hover filtering** - Passar mouse na frequência filtra o range para mostrar apenas aquela ação
-- **Card AULAS** - Nova seção na tela inicial (Em breve) com emoji 🔍
-- **Layout responsivo** - Elementos se adaptam automaticamente ao tamanho da janela
-- **Dealer button** na borda da mesa (entre posição e mesa)
-
-#### Alterado
-- **Gradiente dos combos**: Diagonal → Vertical (90deg)
-- **Emojis da Home**: PKO=🎯, VANILLA=⚔️, Drill=🎮, AULAS=🔍
-- **Cores padronizadas**: 
-  - 1º Raise = Amarelo
-  - 2º Raise = Verde  
-  - 3º Raise = Roxo
-  - 4º Raise+ = Rosa bebê
-- **Hero destacado em amarelo** (não mais azul)
-- **Seats com fundo sólido** (sem transparência)
-- **Fonte dos stacks** aumentada em 50%
-- **Mesa oval** redesenhada igual à referência
-- **Posições distribuídas** simetricamente ao redor da mesa
-- **Painel esquerdo** com background mais escuro para destaque
-
-#### Arquivos Modificados
-- `js/app.js` - Cores, hover filtering, histórico, gradiente vertical
-- `css/styles.css` - Responsividade, cores, layout da mesa
-- `index.html` - Painel de histórico, card AULAS, emojis
+- Histórico de ações - Painel mostrando sequência do spot
+- Hover filtering - Mouse na frequência filtra o range
+- Layout responsivo
+- Dealer button na borda da mesa
 
 ---
 
 ### [1.2.0] - 2025-12-08
-**🔧 Correção completa da lógica de navegação + Mesa dinâmica**
+**🔧 Correção da lógica de navegação**
 
 #### Corrigido
-- Navegação entre spots agora segue ordem correta do poker (EP→MP→HJ→CO→BTN→SB→BB)
-- CO raise agora vai para BTN (não volta para EP)
-- Lógica de histórico de ações corrigida para todos os stacks
-
-#### Adicionado
-- `updateTableDisplay()` - Atualiza mesa visualmente a cada navegação
-- `getFoldedPositionsFromHistory()` - Marca posições que foldaram
-- Sistema de cores unificado com `ACTION_COLORS` e `getActionCategory()`
-- Label de stack no header da mesa (100BB)
-- Estilo `.seat.acted` para posições que já agiram
-
-#### Alterado
-- `getNextSpotKey()` - Lógica reescrita para manter histórico correto
-- `loadSpot()` - Agora chama `updateTableDisplay()`
-- `showEmptySpot()` - Agora marca folded seats
-- Mesa redesenhada para ficar igual à imagem de referência
-- Botões de ação com gradientes e cores consistentes
+- Navegação segue ordem correta (EP→MP→HJ→CO→BTN→SB→BB)
+- Lógica de histórico corrigida
 
 ---
 
 ### [1.1.0] - 2025-12-07
 **🎨 Novo layout do visualizador**
 
-#### Adicionado
-- Layout de 3 colunas (Mesa | Range | Frequências)
-- Mesa oval horizontal com posições corretas
+- Layout de 3 colunas
+- Mesa oval horizontal
 - Dealer button no BTN
-- Painel de stats (Fold/Call/Raise %)
 
 ---
 
 ### [1.0.0] - 2025-12-05
 **🚀 Lançamento inicial**
 
-#### Adicionado
 - Tela Home com categorias
-- Tela de seleção de fases
 - Visualizador de ranges básico
 - 668 spots VANILLA CEV Symmetric
-- Deploy automático via Vercel
+- Deploy via Vercel
 
 ---
 
-## 🚀 Deploy
+## 🔧 Estrutura dos Dados
 
-### Automático (GitHub → Vercel)
-```bash
-git add .
-git commit -m "feat: descrição da mudança"
-git push origin main
-# Deploy automático em ~30 segundos
+### Formato dos Spots
+```javascript
+{
+  "100BB_D_FFFFR": {
+    "p": 5,           // posição (5=SB)
+    "s": [            // sequência de ações anteriores
+      {"player": 0, "type": "F", "amount": 0},
+      {"player": 1, "type": "F", "amount": 0},
+      {"player": 2, "type": "F", "amount": 0},
+      {"player": 3, "type": "F", "amount": 0},
+      {"player": 4, "type": "R", "amount": 250000}  // BTN open 2.5BB
+    ],
+    "a": [            // ações disponíveis
+      {"type": "F", "amount": 0},
+      {"type": "C", "amount": 200000},
+      {"type": "R", "amount": 875000},   // 3bet 8.75BB
+      {"type": "R", "amount": 1125000},  // 3bet 11.25BB
+      {"type": "R", "amount": 10000000}  // All-in
+    ],
+    "h": {            // hands
+      "AA": {"played": [0, 0, 0.3, 0.7, 0], "evs": [...], "weight": 1}
+    }
+  }
+}
 ```
 
-### Manual (GitHub Desktop)
-1. Abra GitHub Desktop
-2. Veja as mudanças em "Changes"
-3. Escreva um resumo no campo "Summary"
-4. Clique "Commit to main"
-5. Clique "Push origin"
+### Escalas
+| Modo | Escala | 1 BB |
+|------|--------|------|
+| 7-MAX | 100,000 | 100000 |
+| HU | 40,000,000 | 40000000 |
+
+### Posições 7-MAX
+| Letra | Posição | Índice |
+|-------|---------|--------|
+| U | EP (UTG) | 0 |
+| H | MP | 1 |
+| C | HJ | 2 |
+| B | CO | 3 |
+| S | BTN | 4 |
+| D | SB | 5 |
+| X | BB | 6 |
 
 ---
 
@@ -220,90 +263,48 @@ git push origin main
 - [ ] Drill Mode (treino)
 - [ ] AULAS (conteúdo educacional)
 - [ ] CEV Diamond Symmetric
-- [ ] Fases por % do Field (75%, 50%, 40%, Bolha, etc.)
-- [ ] Final Table (9-handed → HU)
+- [ ] Fases por % do Field
+- [ ] Final Table
 - [ ] ICM integrado
 
 ### Melhorias Planejadas
-- [ ] Responsividade mobile completa
+- [ ] Mobile responsivo completo
 - [ ] Exportar ranges como imagem
-- [ ] Histórico de navegação visual (breadcrumb)
+- [ ] Breadcrumb de navegação
 - [ ] Filtros por tipo de mão
 
 ---
 
-## 🔧 Contexto para Novos Chats
-
-Se você está continuando este projeto em um novo chat, aqui está o que precisa saber:
-
-### Arquivos Principais
-1. **`js/app.js`** - Toda a lógica JavaScript
-2. **`css/styles.css`** - Todos os estilos
-3. **`index.html`** - Estrutura HTML (3 telas)
-4. **`data/spots.js`** - Dados dos 668 spots (~9MB)
-
-### Funções Críticas em app.js
-- `selectPosition(pos)` - Inicia navegação clicando em uma posição
-- `executeAction(idx)` - Executa ação (fold, call, raise)
-- `getNextSpotKey(key, action)` - Calcula próximo spot
-- `loadSpot(key)` - Carrega spot e atualiza UI
-- `updateTableDisplay(key)` - Atualiza mesa (hero, folded)
-- `updateHistory()` - Atualiza painel de histórico de ações
-- `getActionCategory(action, idx, stack)` - Retorna categoria da ação para cor
-- `highlightAction(idx)` / `clearHighlight()` - Hover filtering nas frequências
-- `updateRangeGridFiltered(idx)` - Mostra apenas uma ação no grid
-
-### Estrutura dos Spots (spots.js)
-```javascript
-{
-  "100BB_U_R": {
-    "p": 0,           // posição (0=EP, 1=MP, etc.)
-    "a": [            // ações disponíveis
-      {"type": "F", "amount": 0},
-      {"type": "R", "amount": 250000}  // 2.5BB (amount/100000)
-    ],
-    "h": {            // hands
-      "AA": {"played": [0, 1], "evs": [0, 1.5], "weight": 1},
-      ...
-    }
-  }
-}
-```
-
-### Padrão de Navegação
-- RFI spots: `_R`, `_F`, `_FF`, `_FFF`, `_FFFF`, `_FFFFF`, `_FFFFFC`
-- Facing raise: histórico + ação (ex: `R` + `F` = `RF`)
-- Sempre avança para próxima posição, nunca volta
-
-### Sistema de Cores (ACTION_COLORS)
-```javascript
-FOLD:    '#4a5568'  // Cinza
-CALL:    '#00bfff'  // Ciano
-RAISE_1: '#ffff00'  // Amarelo (1º raise)
-RAISE_2: '#00ff00'  // Verde (2º raise)
-RAISE_3: '#9333ea'  // Roxo (3º raise)
-RAISE_4: '#f9a8d4'  // Rosa bebê (4º raise+)
-ALLIN:   '#dc2626'  // Vermelho
-```
-
----
-
-## 📞 Comandos Úteis
+## 🚀 Deploy
 
 ```bash
-# Clonar repositório
-git clone https://github.com/blueredjack/cerebro.git
-
-# Testar localmente
-# Abrir index.html no navegador ou usar Live Server no VS Code
-
-# Ver estrutura
-ls -la
-
-# Verificar sintaxe JS
-node --check js/app.js
+git add .
+git commit -m "feat: descrição"
+git push origin main
+# Deploy automático em ~30 segundos
 ```
 
 ---
 
-**Última atualização:** 2025-12-08 | **Versão:** 1.3.0
+## 📞 Funções Críticas
+
+### Navegação
+- `selectPosition(pos)` - Inicia navegação RFI
+- `executeAction(idx)` - Executa ação e navega
+- `findSpotBySequence()` - Busca spot por sequência
+- `loadSpot(key)` - Carrega spot e atualiza UI
+
+### Display
+- `updateDisplay()` - Atualiza toda a UI
+- `updateActionBadges()` - Atualiza badges de ação
+- `updateTableDisplay()` - Atualiza mesa (hero, folded)
+- `updateHistory()` - Atualiza painel de histórico
+
+### Modos
+- `toggleMelhorEV()` - Ativa/desativa Melhor EV
+- `toggleExploit()` - Ativa/desativa Exploit
+- `getMelhorAcao(hand)` - Retorna melhor ação para mão
+
+---
+
+**Última atualização:** 2025-12-12 | **Versão:** 2.0.0
