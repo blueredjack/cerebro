@@ -1149,7 +1149,7 @@ if (typeof SPOTS_DATA !== 'undefined') {
 
 // Constantes HU
 const HU_POSITIONS = ['SB', 'BB'];
-const HU_POSITION_LETTERS = ['U', 'X']; // U = SB (BTN), X = BB (conforme dados HU)
+const HU_POSITION_LETTERS = ['U', 'H']; // U = SB (BTN), H = BB (conforme dados HU)
 
 // Estado HU
 let currentStackHU = 100;
@@ -1558,7 +1558,7 @@ function selectActionHU(actionIndex) {
     
     // Determinar próxima posição (HU: U = SB/BTN, X = BB)
     const currentPosLetter = currentSpotKeyHU?.split('_')[1] || 'U';
-    const nextPosLetter = currentPosLetter === 'U' ? 'X' : 'U';
+    const nextPosLetter = currentPosLetter === 'U' ? 'H' : 'U';
     
     const nextKey = `${currentStackHU}BB_${nextPosLetter}_${newHistory}`;
     
