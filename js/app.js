@@ -443,6 +443,76 @@ function countNonRaises(upToIndex) {
     return count;
 }
 
+// === FUNÇÕES HU (escala diferente: 40.000.000 por BB) ===
+const HU_SCALE = 40000000;
+
+function getActionLabelHU(a, stack) {
+    if (a.type === 'F') return 'Fold';
+    if (a.type === 'K' || a.type === 'X') return 'Check';
+    if (a.type === 'C') {
+        const bb = a.amount ? a.amount / HU_SCALE : 0;
+        if (bb === 0) return 'Check';
+        return 'Call';
+    }
+    if (a.type === 'R') {
+        const bb = a.amount ? a.amount / HU_SCALE : 0;
+        const pctStack = stack > 0 ? (bb / stack) * 100 : 0;
+        if (pctStack >= 90) return 'All-In';
+        return 'Raise';
+    }
+    return a.type;
+}
+
+function formatAmountHU(amt, stack) {
+    const bb = amt / HU_SCALE;
+    const pctStack = stack > 0 ? (bb / stack) * 100 : 0;
+    
+    // Se for all-in, não mostrar valor
+    if (pctStack >= 90) return '';
+    
+    // Formatar BB
+    if (bb >= 100) return '(' + bb.toFixed(0) + ' BB)';
+    if (bb >= 10) return '(' + bb.toFixed(1) + ' BB)';
+    return '(' + bb.toFixed(2) + ' BB)';
+}
+
+function getActionCategoryHU(action, actionIndex, stack) {
+    const bb = action.amount ? action.amount / HU_SCALE : 0;
+    const pctStack = stack > 0 ? (bb / stack) * 100 : 0;
+    
+    if (action.type === 'F') return 'FOLD';
+    if (action.type === 'K' || action.type === 'X') return 'CHECK';
+    if (action.type === 'C') return 'CALL';
+    
+    if (action.type === 'R') {
+        // All-in: quando o raise é >= 90% do stack
+        if (pctStack >= 90) return 'ALLIN';
+        
+        // Categorizar por índice do raise no spot
+        const raiseIndex = actionIndex - countNonRaisesHU(actionIndex);
+        if (raiseIndex <= 0) return 'RAISE_1';  // Primeiro raise - Amarelo
+        if (raiseIndex === 1) return 'RAISE_2'; // Segundo raise - Verde
+        if (raiseIndex === 2) return 'RAISE_3'; // Terceiro raise - Roxo
+        return 'RAISE_4';                        // Quarto+ raise - Rosa bebê
+    }
+    
+    return 'FOLD';
+}
+
+function countNonRaisesHU(upToIndex) {
+    if (!currentSpotHU || !currentSpotHU.a) return 0;
+    let count = 0;
+    for (let i = 0; i < upToIndex; i++) {
+        if (currentSpotHU.a[i].type !== 'R') count++;
+    }
+    return count;
+}
+
+function getButtonClassHU(action, actionIndex, stack) {
+    const category = getActionCategoryHU(action, actionIndex, stack);
+    return ACTION_COLORS[category]?.btn || 'btn-fold';
+}
+
 function getActionLabel(a, stack) {
     if (a.type === 'F') return 'Fold';
     if (a.type === 'K' || a.type === 'X') return 'Check';
@@ -1295,8 +1365,8 @@ function showHandDetailsHU(hand) {
             const ev = hd.evs && hd.evs[idx] !== undefined ? hd.evs[idx] : 0;
             const freq = hd.played && hd.played[idx] !== undefined ? hd.played[idx] : 0;
             const evClass = ev >= 0 ? 'positive' : 'negative';
-            const label = getActionLabel(action, currentStackHU);
-            const amount = action.amount ? formatAmount(action.amount, currentStackHU) : '';
+            const label = getActionLabelHU(action, currentStackHU);
+            const amount = action.amount ? formatAmountHU(action.amount, currentStackHU) : '';
             const actionName = label + (amount ? ' ' + amount : '');
             
             return `
@@ -1391,7 +1461,7 @@ function updateRangeGridHU() {
                 return;
             }
             
-            const category = getActionCategory(melhor.action, melhor.idx, currentStackHU);
+            const category = getActionCategoryHU(melhor.action, melhor.idx, currentStackHU);
             const hex = ACTION_COLORS[category]?.hex || '#f97316';
             cell.style.background = hex;
             cell.style.color = '#000';
@@ -1412,7 +1482,7 @@ function updateRangeGridHU() {
             if (freq > 0 && actions[idx]) {
                 const actionType = actions[idx].type;
                 if (actionType !== 'F') {
-                    const category = getActionCategory(actions[idx], idx, currentStackHU);
+                    const category = getActionCategoryHU(actions[idx], idx, currentStackHU);
                     const hex = ACTION_COLORS[category]?.hex || '#f97316';
                     actionColors.push({ freq, hex, type: actionType });
                     totalActionFreq += freq;
@@ -1519,16 +1589,15 @@ function updateActionsHU() {
     }
     
     row.innerHTML = currentSpotHU.a.map((a, i) => {
-        const label = getActionLabel(a, currentStackHU);
-        const btnClass = getButtonClass(a, i, currentStackHU);
-        const amount = a.amount ? formatAmount(a.amount, currentStackHU) : '';
+        const label = getActionLabelHU(a, currentStackHU);
+        const btnClass = getButtonClassHU(a, i, currentStackHU);
+        const amount = a.amount ? formatAmountHU(a.amount, currentStackHU) : '';
         
         // Verificar se tem próximo nó usando a lógica HU
         const hasNext = checkHasNextHU(a.type);
         
         return `<button class="action-btn ${btnClass} ${hasNext ? 'has-next' : ''}" onclick="executeActionHU(${i})">
-            <span>${label}</span>
-            ${amount ? `<span class="btn-amount">${amount}</span>` : ''}
+            <span>${label} ${amount}</span>
         </button>`;
     }).join('');
 }
@@ -1670,15 +1739,15 @@ function updateFrequencyListHU() {
     
     container.innerHTML = actions.map((action, idx) => {
         const freq = freqs[idx] || 0;
-        const category = getActionCategory(action, idx, currentStackHU);
+        const category = getActionCategoryHU(action, idx, currentStackHU);
         const colorHex = ACTION_COLORS[category]?.hex || '#64748b';
-        const label = getActionLabel(action, currentStackHU);
-        const amount = action.amount ? formatAmount(action.amount, currentStackHU) : '';
+        const label = getActionLabelHU(action, currentStackHU);
+        const amount = action.amount ? formatAmountHU(action.amount, currentStackHU) : '';
         
         return `
             <div class="freq-item">
                 <div class="freq-color" style="background: ${colorHex}"></div>
-                <span class="freq-label">${label}${amount ? ' ' + amount : ''}</span>
+                <span class="freq-label">${label} ${amount}</span>
                 <span class="freq-value" style="color: ${colorHex}">${(freq * 100).toFixed(1)}%</span>
             </div>
         `;
