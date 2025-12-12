@@ -1152,7 +1152,7 @@ const HU_POSITIONS = ['SB', 'BB'];
 const HU_POSITION_LETTERS = ['U', 'H']; // U = SB (BTN), H = BB (conforme dados HU)
 
 // Estado HU
-let currentStackHU = 100;
+let currentStackHU = 50; // Stack inicial HU (máx disponível: 50BB)
 let currentSpotHU = null;
 let currentSpotKeyHU = null;
 let selectedHandHU = null;
@@ -1532,11 +1532,16 @@ function updateActionButtonsHU() {
     const actions = currentSpotHU.a || [];
     
     container.innerHTML = actions.map((action, idx) => {
-        const hasNext = action.node && SPOTS_DATA_HU[`${currentStackHU}BB_${currentSpotKeyHU?.split('_')[1]}_${getHistoryFromKey(currentSpotKeyHU)}${action.type}`];
-        const colorClass = getActionColorClass(action, idx);
+        const nextHistory = getHistoryFromKey(currentSpotKeyHU) + action.type;
+        const currentPosLetter = currentSpotKeyHU?.split('_')[1] || 'U';
+        const nextPosLetter = currentPosLetter === 'U' ? 'H' : 'U';
+        const nextKey = `${currentStackHU}BB_${nextPosLetter}_${nextHistory}`;
+        const hasNext = action.node && SPOTS_DATA_HU && SPOTS_DATA_HU[nextKey];
+        
+        const btnClass = getButtonClass(action, idx, currentStackHU);
         const label = formatActionNameHU(action);
         
-        return `<button class="action-btn ${colorClass} ${hasNext ? 'has-next' : ''}" 
+        return `<button class="action-btn ${btnClass} ${hasNext ? 'has-next' : ''}" 
                         onclick="selectActionHU(${idx})">${label}</button>`;
     }).join('');
 }
@@ -1587,14 +1592,15 @@ function updateFrequencyListHU() {
     
     container.innerHTML = actions.map((action, idx) => {
         const freq = freqs[idx] || 0;
-        const colorClass = getActionColorClass(action, idx);
+        const category = getActionCategory(action, idx, currentStackHU);
+        const colorHex = ACTION_COLORS[category]?.hex || '#64748b';
         const label = formatActionNameHU(action);
         
         return `
             <div class="freq-row">
-                <div class="freq-color ${colorClass}"></div>
+                <div class="freq-color" style="background: ${colorHex}"></div>
                 <span class="freq-label">${label}</span>
-                <span class="freq-value">${(freq * 100).toFixed(1)}%</span>
+                <span class="freq-value" style="color: ${colorHex}">${(freq * 100).toFixed(1)}%</span>
             </div>
         `;
     }).join('');
