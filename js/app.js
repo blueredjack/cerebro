@@ -1312,46 +1312,42 @@ function showHandDetailsHU(hand) {
 
 // === SELEÇÃO DE POSIÇÃO HU ===
 function selectPositionHU(posIndex) {
-    const posLetter = HU_POSITION_LETTERS[posIndex];
+    // No HU, só podemos começar pelo SB (posIndex = 0)
+    // BB só é acessível navegando a partir das ações do SB
     
-    // No HU, SB abre primeiro (RFI)
-    // SB = primeiro a agir = padrão _R
-    // BB = segundo a agir = padrão vazio (depende do que SB fez)
-    
-    let historyPattern;
     if (posIndex === 0) {
-        // SB - primeiro a agir
-        historyPattern = 'R';
-    } else {
-        // BB - espera ação do SB (por enquanto, usar padrão de limp/raise)
-        historyPattern = 'FFFFFC'; // Usar padrão do BB normal por enquanto
-    }
-    
-    const spotKey = `${currentStackHU}BB_${posLetter}_${historyPattern}`;
-    
-    console.log('HU - Buscando spot:', spotKey);
-    
-    if (SPOTS_DATA_HU && SPOTS_DATA_HU[spotKey]) {
-        currentSpotHU = SPOTS_DATA_HU[spotKey];
-        currentSpotKeyHU = spotKey;
-        navigationPathHU = [{ key: spotKey, position: posIndex }];
-        updateDisplayHU();
-        updateHeroBadgeHU(posIndex);
-    } else {
-        console.log('HU - Spot não encontrado, tentando alternativas...');
-        // Tentar encontrar qualquer spot para essa posição
-        const prefix = `${currentStackHU}BB_${posLetter}_`;
-        const found = Object.keys(SPOTS_DATA_HU).find(k => k.startsWith(prefix));
-        if (found) {
-            currentSpotHU = SPOTS_DATA_HU[found];
-            currentSpotKeyHU = found;
-            navigationPathHU = [{ key: found, position: posIndex }];
+        // SB - primeiro a agir - spot de abertura
+        const spotKey = `${currentStackHU}BB_U_R`;
+        
+        console.log('HU - Buscando spot SB:', spotKey);
+        
+        if (SPOTS_DATA_HU && SPOTS_DATA_HU[spotKey]) {
+            currentSpotHU = SPOTS_DATA_HU[spotKey];
+            currentSpotKeyHU = spotKey;
+            navigationPathHU = [{ key: spotKey, position: 0 }];
             updateDisplayHU();
-            updateHeroBadgeHU(posIndex);
+            updateHeroBadgeHU(0);
+            updateRangePositionHU();
         } else {
-            alert(`Nenhum spot encontrado para ${HU_POSITIONS[posIndex]} em ${currentStackHU}BB`);
+            alert(`Nenhum spot encontrado para SB em ${currentStackHU}BB`);
         }
+    } else {
+        // BB - mostrar mensagem explicativa
+        alert('No Heads-Up, clique no SB para iniciar. O BB será acessível após a ação do SB.');
     }
+}
+
+function updateRangePositionHU() {
+    const el = document.getElementById('rangePositionHU');
+    if (!el) return;
+    
+    if (!currentSpotKeyHU) {
+        el.textContent = '?';
+        return;
+    }
+    
+    const posLetter = currentSpotKeyHU.split('_')[1];
+    el.textContent = posLetter === 'U' ? 'SB' : 'BB';
 }
 
 function updateHeroBadgeHU(posIndex) {
@@ -1527,18 +1523,45 @@ function updateActionsHU() {
         const btnClass = getButtonClass(a, i, currentStackHU);
         const amount = a.amount ? formatAmount(a.amount, currentStackHU) : '';
         
-        // Verificar se tem próximo nó
-        const nextHistory = getHistoryFromKey(currentSpotKeyHU) + a.type;
-        const currentPosLetter = currentSpotKeyHU?.split('_')[1] || 'U';
-        const nextPosLetter = currentPosLetter === 'U' ? 'H' : 'U';
-        const nextKey = `${currentStackHU}BB_${nextPosLetter}_${nextHistory}`;
-        const hasNext = a.node && SPOTS_DATA_HU && SPOTS_DATA_HU[nextKey];
+        // Verificar se tem próximo nó usando a lógica HU
+        const hasNext = checkHasNextHU(a.type);
         
         return `<button class="action-btn ${btnClass} ${hasNext ? 'has-next' : ''}" onclick="executeActionHU(${i})">
             <span>${label}</span>
             ${amount ? `<span class="btn-amount">${amount}</span>` : ''}
         </button>`;
     }).join('');
+}
+
+// Verifica se existe próximo nó para uma ação no HU
+function checkHasNextHU(actionType) {
+    if (!currentSpotKeyHU || actionType === 'F') return false;
+    
+    const parts = currentSpotKeyHU.split('_');
+    const stack = parts[0];
+    const currentPos = parts[1];
+    const currentPath = parts[2];
+    
+    let nextKey = null;
+    
+    if (currentPos === 'U') {
+        if (currentPath === 'R') {
+            if (actionType === 'C') nextKey = `${stack}_H_C`;
+            else if (actionType === 'R') nextKey = `${stack}_H_R`;
+        } else if (currentPath === 'CR') {
+            if (actionType === 'R') nextKey = `${stack}_H_CRR`;
+        } else if (currentPath === 'RR') {
+            if (actionType === 'R') nextKey = `${stack}_H_RRR`;
+        }
+    } else {
+        if (currentPath === 'C') {
+            if (actionType === 'R') nextKey = `${stack}_U_CR`;
+        } else if (currentPath === 'R') {
+            if (actionType === 'R') nextKey = `${stack}_U_RR`;
+        }
+    }
+    
+    return nextKey && SPOTS_DATA_HU && SPOTS_DATA_HU[nextKey];
 }
 
 function getHistoryFromKey(key) {
@@ -1559,25 +1582,79 @@ function executeActionHU(actionIndex) {
         return;
     }
     
-    const currentHistory = getHistoryFromKey(currentSpotKeyHU);
-    const newHistory = currentHistory + action.type;
+    // Determinar próximo spot baseado na estrutura HU
+    // Estrutura de keys: U_R, H_C, H_R, U_CR, U_RR, etc.
+    const currentKey = currentSpotKeyHU;
+    const parts = currentKey.split('_');
+    const stack = parts[0]; // ex: "50BB"
+    const currentPos = parts[1]; // U ou H
+    const currentPath = parts[2]; // R, C, CR, RR, etc.
     
-    // Determinar próxima posição (HU: U = SB/BTN, H = BB)
-    const currentPosLetter = currentSpotKeyHU?.split('_')[1] || 'U';
-    const nextPosLetter = currentPosLetter === 'U' ? 'H' : 'U';
+    let nextKey = null;
     
-    const nextKey = `${currentStackHU}BB_${nextPosLetter}_${newHistory}`;
+    if (currentPos === 'U') {
+        // SB está agindo
+        if (currentPath === 'R') {
+            // SB abrindo: C=limp vai para H_C, R=raise vai para H_R
+            if (action.type === 'C') {
+                nextKey = `${stack}_H_C`;
+            } else if (action.type === 'R') {
+                nextKey = `${stack}_H_R`;
+            }
+        } else if (currentPath === 'CR') {
+            // SB facing 3-bet após limp: R=4-bet vai para H_CRR
+            if (action.type === 'R') {
+                nextKey = `${stack}_H_CRR`;
+            }
+        } else if (currentPath === 'RR') {
+            // SB facing 4-bet: R=5-bet vai para H_RRR
+            if (action.type === 'R') {
+                nextKey = `${stack}_H_RRR`;
+            }
+        }
+    } else {
+        // BB está agindo (H)
+        if (currentPath === 'C') {
+            // BB vs limp: R=3-bet vai para U_CR
+            if (action.type === 'R') {
+                nextKey = `${stack}_U_CR`;
+            }
+        } else if (currentPath === 'R') {
+            // BB vs raise: R=3-bet vai para U_RR
+            if (action.type === 'R') {
+                nextKey = `${stack}_U_RR`;
+            }
+        } else if (currentPath === 'CRR') {
+            // BB 4-betting: R=5-bet vai para U_CRRR
+            if (action.type === 'R') {
+                nextKey = `${stack}_U_CRRR`;
+            }
+        } else if (currentPath === 'RRR') {
+            // BB 5-betting: R=6-bet vai para U_RRRR
+            if (action.type === 'R') {
+                nextKey = `${stack}_U_RRRR`;
+            }
+        }
+    }
     
-    if (SPOTS_DATA_HU && SPOTS_DATA_HU[nextKey]) {
+    console.log('HU - Ação:', action.type, '| Key atual:', currentKey, '| Próximo:', nextKey);
+    
+    if (nextKey && SPOTS_DATA_HU && SPOTS_DATA_HU[nextKey]) {
         currentSpotHU = SPOTS_DATA_HU[nextKey];
         currentSpotKeyHU = nextKey;
         navigationPathHU.push({ key: nextKey, action: action.type });
         updateDisplayHU();
         
-        const posIndex = nextPosLetter === 'U' ? 0 : 1;
+        const nextPos = nextKey.split('_')[1];
+        const posIndex = nextPos === 'U' ? 0 : 1;
         updateHeroBadgeHU(posIndex);
+        updateRangePositionHU();
+    } else if (action.type === 'C') {
+        // Call geralmente termina a ação (exceto limp)
+        alert('Ação finalizada (Call). Selecione uma posição para recomeçar.');
     } else {
-        console.log('HU - Próximo spot não encontrado:', nextKey);
+        console.log('HU - Próximo spot não disponível:', nextKey);
+        alert('Próximo nó não disponível nos dados.');
     }
 }
 
@@ -1638,58 +1715,82 @@ function updateHistoryHU() {
         return;
     }
     
-    // Extrair informações da key: 50BB_U_R ou 50BB_H_RC
+    // Extrair informações da key: 50BB_U_R, 50BB_H_C, 50BB_U_CR, etc.
     const parts = currentSpotKeyHU.split('_');
     if (parts.length < 3) {
         content.innerHTML = '<div class="history-empty">-</div>';
         return;
     }
     
-    const history = parts[2]; // Ex: R, RC, RR, etc.
-    const currentPosLetter = parts[1];
-    const currentPosName = currentPosLetter === 'U' ? 'SB' : 'BB';
+    const path = parts[2]; // R, C, CR, RR, CRR, etc.
+    const currentPos = parts[1]; // U ou H
+    const currentPosName = currentPos === 'U' ? 'SB' : 'BB';
     
-    // Construir histórico visual
-    // No HU: posição alterna entre SB (U) e BB (H)
+    // Interpretar o caminho para construir histórico
+    // R = spot de abertura (sem ações anteriores)
+    // C = BB facing limp (SB fez limp)
+    // CR = SB facing 3-bet após limp
+    // RR = SB facing 4-bet após raise
+    // etc.
+    
     let html = '';
-    let posIdx = 0; // 0 = SB, 1 = BB
+    let actions = [];
     
-    for (let i = 0; i < history.length; i++) {
-        const action = history[i];
-        const posName = posIdx === 0 ? 'SB' : 'BB';
+    if (path === 'R') {
+        // Spot de abertura - nenhuma ação anterior
+        // SB está decidindo
+    } else if (path === 'C') {
+        // BB facing limp
+        actions.push({ pos: 'SB', action: 'Limp', class: 'call' });
+    } else if (path === 'CR') {
+        // SB facing 3-bet após limp
+        actions.push({ pos: 'SB', action: 'Limp', class: 'call' });
+        actions.push({ pos: 'BB', action: 'Raise', class: 'raise' });
+    } else if (path.startsWith('R') && path !== 'R') {
+        // Paths começando com R (raise inicial)
+        actions.push({ pos: 'SB', action: 'Raise', class: 'raise' });
         
-        let actionClass = '';
-        let actionText = '';
-        
-        if (action === 'F') {
-            actionClass = 'fold';
-            actionText = 'Fold';
-        } else if (action === 'R') {
-            actionClass = 'raise';
-            actionText = 'Raise';
-        } else if (action === 'C') {
-            actionClass = 'call';
-            actionText = 'Call';
-        } else if (action === 'K' || action === 'X') {
-            actionClass = 'check';
-            actionText = 'Check';
+        // Cada R adicional é um re-raise alternando
+        for (let i = 1; i < path.length; i++) {
+            const char = path[i];
+            const pos = i % 2 === 1 ? 'BB' : 'SB';
+            if (char === 'R') {
+                actions.push({ pos: pos, action: 'Raise', class: 'raise' });
+            } else if (char === 'C') {
+                actions.push({ pos: pos, action: 'Call', class: 'call' });
+            }
         }
+    } else if (path.startsWith('C') && path !== 'C') {
+        // Paths começando com C (limp inicial)
+        actions.push({ pos: 'SB', action: 'Limp', class: 'call' });
         
-        html += `<div class="history-item">
-            <span class="history-position">${posName}</span>
-            <span class="history-action ${actionClass}">${actionText}</span>
-        </div>`;
-        
-        if (i < history.length - 1) {
-            html += '<span class="history-arrow">→</span>';
+        for (let i = 1; i < path.length; i++) {
+            const char = path[i];
+            const pos = i % 2 === 1 ? 'BB' : 'SB';
+            if (char === 'R') {
+                actions.push({ pos: pos, action: 'Raise', class: 'raise' });
+            } else if (char === 'C') {
+                actions.push({ pos: pos, action: 'Call', class: 'call' });
+            }
         }
-        
-        // Alternar posição
-        posIdx = posIdx === 0 ? 1 : 0;
     }
     
+    // Construir HTML do histórico
+    actions.forEach((a, i) => {
+        html += `<div class="history-item">
+            <span class="history-position">${a.pos}</span>
+            <span class="history-action ${a.class}">${a.action}</span>
+        </div>`;
+        
+        if (i < actions.length - 1) {
+            html += '<span class="history-arrow">→</span>';
+        }
+    });
+    
     // Adicionar posição atual (hero)
-    html += '<span class="history-arrow">→</span>';
+    if (actions.length > 0) {
+        html += '<span class="history-arrow">→</span>';
+    }
     html += `<div class="history-item history-current">
         <span class="history-position">${currentPosName}</span>
         <span class="history-action" style="background: #f1c40f; color: #000;">?</span>
@@ -1744,6 +1845,7 @@ function goBackHU() {
         const posLetter = prev.key.split('_')[1];
         const posIndex = posLetter === 'U' ? 0 : 1;
         updateHeroBadgeHU(posIndex);
+        updateRangePositionHU();
     } else {
         resetToInitialStateHU();
     }
