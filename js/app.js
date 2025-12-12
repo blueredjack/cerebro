@@ -568,159 +568,104 @@ function getNextSpotKey(currentKey, actionType, actionAmount = 0, raiseIndex = 0
     const [, stack, posLetter, history] = match;
     const currentPosIdx = POSITION_LETTERS.indexOf(posLetter);
     
+    // Construir a sequência esperada após a ação
+    const currentSequence = currentSpot.s || [];
+    const expectedSequence = [...currentSequence, { type: actionType, amount: actionAmount }];
+    
+    // ESTRATÉGIA 1: Buscar spot pela sequência de ações (mais preciso)
+    const spotBySequence = findSpotBySequence(stack, currentPosIdx, expectedSequence);
+    if (spotBySequence) {
+        const nextPosLetter = spotBySequence.split('_')[1];
+        const nextPosIdx = POSITION_LETTERS.indexOf(nextPosLetter);
+        const newHistory = spotBySequence.split('_')[2];
+        return { key: spotBySequence, nextPos: nextPosIdx, newHistory };
+    }
+    
+    // ESTRATÉGIA 2: Fallback para navegação por histórico textual
     let newHistory;
     
-    // Lógica especial para spots RFI (primeiro a agir)
     if (isRFISpot(currentKey)) {
         if (actionType === 'F') {
-            // Fold no RFI: próximo assume RFI, histórico adiciona F
-            newHistory = history.replace(/R$/, '') + 'F';
-            // Se era só R, vira F. Se era F, vira FF. etc.
             if (history === 'R') {
                 newHistory = 'F';
             } else {
                 newHistory = history + 'F';
             }
         } else {
-            // Raise no RFI: próximo está facing raise
-            // O histórico se torna o que tinha + mantém só um R
-            // FFF + R = FFFR (não FFFR + R)
             if (history === 'R') {
-                // EP abriu, próximo vê só R
                 newHistory = 'R';
             } else {
-                // CO abriu (FFF), próximo vê FFFR
                 newHistory = history + 'R';
             }
         }
     } else {
-        // Não é RFI: simplesmente adiciona a ação ao histórico
         newHistory = history + actionType;
     }
     
-    // Construir a sequência atual para validação
-    const currentSequence = currentSpot.s || [];
-    const newActionForSequence = {
-        type: actionType,
-        amount: actionAmount
-    };
-    
-    // Tentar encontrar próximo spot em ordem de posições
+    // Tentar encontrar próximo spot por histórico
     for (let offset = 1; offset <= 7; offset++) {
         const nextPosIdx = (currentPosIdx + offset) % 7;
         const nextPosLetter = POSITION_LETTERS[nextPosIdx];
         const candidateKey = `${stack}BB_${nextPosLetter}_${newHistory}`;
         
         if (SPOTS_DATA[candidateKey]) {
-            // Se é um raise e há múltiplos raises disponíveis, verificar se o spot corresponde
-            if (actionType === 'R' && actionAmount > 0) {
-                const candidateSpot = SPOTS_DATA[candidateKey];
-                if (candidateSpot.s && candidateSpot.s.length > 0) {
-                    // Verificar se a sequência do candidato bate com a ação escolhida
-                    const isMatch = verifySequenceMatch(currentSequence, newActionForSequence, candidateSpot.s);
-                    if (isMatch) {
-                        return { key: candidateKey, nextPos: nextPosIdx, newHistory };
-                    }
-                    // Se não bate, continuar procurando variações
-                    continue;
-                }
-            }
             return { key: candidateKey, nextPos: nextPosIdx, newHistory };
         }
     }
     
-    // Tentar encontrar spot com histórico similar (para múltiplos raises)
-    if (actionType === 'R' && actionAmount > 0) {
-        const foundKey = findSpotByRaiseAmount(stack, currentPosIdx, history, actionType, actionAmount);
-        if (foundKey) {
-            const nextPosIdx = POSITION_LETTERS.indexOf(foundKey.split('_')[1]);
-            return { key: foundKey, nextPos: nextPosIdx, newHistory: foundKey.split('_')[2] };
-        }
-    }
-    
-    // Não encontrou spot, retorna próxima posição para mostrar tela vazia
+    // Não encontrou spot
     const nextPosIdx = (currentPosIdx + 1) % 7;
     return { key: null, nextPos: nextPosIdx, newHistory };
 }
 
-// Verifica se a sequência do spot candidato corresponde às ações até agora + nova ação
-function verifySequenceMatch(currentSequence, newAction, candidateSequence) {
-    // A sequência do candidato deve ter currentSequence.length + 1 ações
-    if (candidateSequence.length !== currentSequence.length + 1) {
-        return false;
-    }
+// Busca spot pela sequência de ações (compara valores exatos)
+function findSpotBySequence(stack, currentPosIdx, expectedSequence) {
+    const prefix = `${stack}BB_`;
     
-    // Verificar se as ações anteriores batem
-    for (let i = 0; i < currentSequence.length; i++) {
-        if (currentSequence[i].type !== candidateSequence[i].type) {
-            return false;
-        }
-        // Verificar valor para raises (com tolerância de 1%)
-        if (currentSequence[i].type === 'R') {
-            const diff = Math.abs(currentSequence[i].amount - candidateSequence[i].amount);
-            const tolerance = currentSequence[i].amount * 0.01;
-            if (diff > tolerance) {
-                return false;
-            }
-        }
-    }
-    
-    // Verificar se a nova ação bate
-    const lastAction = candidateSequence[candidateSequence.length - 1];
-    if (lastAction.type !== newAction.type) {
-        return false;
-    }
-    
-    // Verificar valor do raise (com tolerância de 5%)
-    if (newAction.type === 'R') {
-        const diff = Math.abs(newAction.amount - lastAction.amount);
-        const tolerance = newAction.amount * 0.05;
-        if (diff > tolerance) {
-            return false;
-        }
-    }
-    
-    return true;
-}
-
-// Procura um spot específico baseado no valor do raise
-function findSpotByRaiseAmount(stack, currentPosIdx, history, actionType, actionAmount) {
-    const amountBB = actionAmount / 100000;
-    
-    // Procurar spots que correspondam ao histórico + ação
+    // Procurar em todas as posições seguintes
     for (let offset = 1; offset <= 7; offset++) {
         const nextPosIdx = (currentPosIdx + offset) % 7;
         const nextPosLetter = POSITION_LETTERS[nextPosIdx];
+        const keyPrefix = `${prefix}${nextPosLetter}_`;
         
-        // Procurar variações do histórico com R adicional
-        const patterns = [
-            history + 'R',
-            history + 'RR',
-            history + 'RC',
-            history + 'RF'
-        ];
+        // Procurar todos os spots dessa posição
+        const matchingKeys = Object.keys(SPOTS_DATA).filter(k => k.startsWith(keyPrefix));
         
-        for (const pattern of patterns) {
-            const candidateKey = `${stack}BB_${nextPosLetter}_${pattern}`;
+        for (const candidateKey of matchingKeys) {
             const candidateSpot = SPOTS_DATA[candidateKey];
+            if (!candidateSpot.s) continue;
             
-            if (candidateSpot && candidateSpot.s) {
-                // Verificar se o último raise na sequência corresponde ao valor escolhido
-                const raises = candidateSpot.s.filter(s => s.type === 'R');
-                if (raises.length > 0) {
-                    const lastRaise = raises[raises.length - 1];
-                    const lastRaiseBB = lastRaise.amount / 100000;
-                    
-                    // Tolerância de 10% para encontrar o spot correto
-                    if (Math.abs(lastRaiseBB - amountBB) / amountBB < 0.1) {
-                        return candidateKey;
-                    }
-                }
+            // Verificar se a sequência bate
+            if (sequencesMatch(expectedSequence, candidateSpot.s)) {
+                return candidateKey;
             }
         }
     }
     
     return null;
+}
+
+// Compara duas sequências de ações (com tolerância para valores)
+function sequencesMatch(expected, candidate) {
+    if (expected.length !== candidate.length) return false;
+    
+    for (let i = 0; i < expected.length; i++) {
+        const exp = expected[i];
+        const cand = candidate[i];
+        
+        // Tipo deve ser igual
+        if (exp.type !== cand.type) return false;
+        
+        // Para raises, verificar valor com tolerância de 5%
+        if (exp.type === 'R' && exp.amount > 0) {
+            const tolerance = exp.amount * 0.05;
+            if (Math.abs(exp.amount - cand.amount) > tolerance) {
+                return false;
+            }
+        }
+    }
+    
+    return true;
 }
 
 function executeAction(idx) {
