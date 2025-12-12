@@ -325,7 +325,7 @@ function updateRangeGrid() {
                 if (actionType !== 'F') {
                     const category = getActionCategory(actions[idx], idx, currentStack);
                     const hex = ACTION_COLORS[category]?.hex || '#f97316';
-                    actionColors.push({ freq, hex, type: actionType, idx });
+                    actionColors.push({ freq, hex, type: actionType });
                     totalActionFreq += freq;
                 }
             }
@@ -339,7 +339,7 @@ function updateRangeGrid() {
             return;
         }
         
-        // Criar visualização com cores da DIREITA para ESQUERDA
+        // Criar visualização com blocos divididos VERTICALMENTE
         if (actionColors.length === 1) {
             const color = actionColors[0].hex;
             const freq = actionColors[0].freq;
@@ -347,35 +347,30 @@ function updateRangeGrid() {
             if (freq >= 0.95) {
                 cell.style.background = color;
             } else {
-                // Cor à direita (freq%), cinza à esquerda (resto)
-                const colorStop = freq * 100;
-                cell.style.background = `linear-gradient(to left, ${color} ${colorStop}%, #2d3748 ${colorStop}%)`;
+                const stopPoint = (1 - freq) * 100;
+                cell.style.background = `linear-gradient(90deg, #2d3748 ${stopPoint}%, ${color} ${stopPoint}%)`;
             }
         } else {
-            // Múltiplas ações - ordenar por ÍNDICE (ordem fixa, consistente)
-            actionColors.sort((a, b) => a.idx - b.idx);
+            // Múltiplas ações - ordenar por frequência
+            actionColors.sort((a, b) => b.freq - a.freq);
             
-            // Construir gradiente da direita para esquerda
-            // to left: 0% = direita, 100% = esquerda
             let gradientStops = [];
             let currentStop = 0;
             
-            // Ações coloridas primeiro (da direita)
-            actionColors.forEach((ac) => {
+            const foldFreq = 1 - totalActionFreq;
+            if (foldFreq > 0.05) {
+                gradientStops.push(`#2d3748 ${foldFreq * 100}%`);
+                currentStop = foldFreq * 100;
+            }
+            
+            actionColors.forEach((ac, i) => {
                 const startStop = currentStop;
                 currentStop += ac.freq * 100;
                 gradientStops.push(`${ac.hex} ${startStop}%`);
                 gradientStops.push(`${ac.hex} ${currentStop}%`);
             });
             
-            // Fold (cinza) por último (à esquerda)
-            const foldFreq = 1 - totalActionFreq;
-            if (foldFreq > 0.01) {
-                gradientStops.push(`#2d3748 ${currentStop}%`);
-                gradientStops.push(`#2d3748 100%`);
-            }
-            
-            cell.style.background = `linear-gradient(to left, ${gradientStops.join(', ')})`;
+            cell.style.background = `linear-gradient(90deg, ${gradientStops.join(', ')})`;
         }
         
         cell.style.color = '#000';
@@ -884,9 +879,9 @@ function updateRangeGridFiltered(actionIndex) {
             // Quase 100% - bloco inteiro colorido
             cell.style.background = hex;
         } else {
-            // Frequência parcial - cor da direita para esquerda
-            const colorStop = freq * 100;
-            cell.style.background = `linear-gradient(to left, ${hex} ${colorStop}%, #2d3748 ${colorStop}%)`;
+            // Frequência parcial - vertical (esquerda para direita)
+            const stopPoint = (1 - freq) * 100;
+            cell.style.background = `linear-gradient(90deg, #2d3748 ${stopPoint}%, ${hex} ${stopPoint}%)`;
         }
         
         cell.style.color = '#000';
@@ -1489,7 +1484,7 @@ function updateRangeGridHU() {
                 if (actionType !== 'F') {
                     const category = getActionCategoryHU(actions[idx], idx, currentStackHU);
                     const hex = ACTION_COLORS[category]?.hex || '#f97316';
-                    actionColors.push({ freq, hex, type: actionType, idx });
+                    actionColors.push({ freq, hex, type: actionType });
                     totalActionFreq += freq;
                 }
             }
@@ -1502,7 +1497,6 @@ function updateRangeGridHU() {
             return;
         }
         
-        // Criar visualização com cores da DIREITA para ESQUERDA
         if (actionColors.length === 1) {
             const color = actionColors[0].hex;
             const freq = actionColors[0].freq;
@@ -1510,20 +1504,20 @@ function updateRangeGridHU() {
             if (freq >= 0.95) {
                 cell.style.background = color;
             } else {
-                // Cor à direita (freq%), cinza à esquerda (resto)
-                const colorStop = freq * 100;
-                cell.style.background = `linear-gradient(to left, ${color} ${colorStop}%, #2d3748 ${colorStop}%)`;
+                const stopPoint = (1 - freq) * 100;
+                cell.style.background = `linear-gradient(90deg, #2d3748 ${stopPoint}%, ${color} ${stopPoint}%)`;
             }
         } else {
-            // Múltiplas ações - ordenar por ÍNDICE (ordem fixa, consistente)
-            actionColors.sort((a, b) => a.idx - b.idx);
-            
-            // Construir gradiente da direita para esquerda
-            // to left: 0% = direita, 100% = esquerda
+            actionColors.sort((a, b) => b.freq - a.freq);
             let gradientStops = [];
             let currentStop = 0;
             
-            // Ações coloridas primeiro (da direita)
+            const foldFreq = 1 - totalActionFreq;
+            if (foldFreq > 0.05) {
+                gradientStops.push(`#2d3748 ${foldFreq * 100}%`);
+                currentStop = foldFreq * 100;
+            }
+            
             actionColors.forEach((ac) => {
                 const startStop = currentStop;
                 currentStop += ac.freq * 100;
@@ -1531,14 +1525,7 @@ function updateRangeGridHU() {
                 gradientStops.push(`${ac.hex} ${currentStop}%`);
             });
             
-            // Fold (cinza) por último (à esquerda)
-            const foldFreq = 1 - totalActionFreq;
-            if (foldFreq > 0.01) {
-                gradientStops.push(`#2d3748 ${currentStop}%`);
-                gradientStops.push(`#2d3748 100%`);
-            }
-            
-            cell.style.background = `linear-gradient(to left, ${gradientStops.join(', ')})`;
+            cell.style.background = `linear-gradient(90deg, ${gradientStops.join(', ')})`;
         }
         
         cell.style.color = '#000';
