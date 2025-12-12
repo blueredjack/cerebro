@@ -3,6 +3,9 @@
    app.js - Lógica principal CORRIGIDA
    ============================================ */
 
+// === CONFIGURAÇÃO DE ACESSO ===
+const ACCESS_PASSWORD = 'cerebro2025'; // Senha de acesso
+
 // === CONSTANTES ===
 const POSITIONS = ['EP', 'MP', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
 const POSITION_LETTERS = ['U', 'H', 'C', 'B', 'S', 'D', 'X'];
@@ -28,6 +31,67 @@ const RFI_HISTORY = {
 const RFI_PATTERNS = {
     0: '_R', 1: '_F', 2: '_FF', 3: '_FFF', 4: '_FFFF', 5: '_FFFFF', 6: '_FFFFFC'
 };
+
+// === SISTEMA DE LOGIN ===
+function checkPassword() {
+    const input = document.getElementById('passwordInput');
+    const error = document.getElementById('loginError');
+    const password = input.value;
+    
+    if (password === ACCESS_PASSWORD) {
+        // Senha correta - salvar sessão e mostrar home
+        sessionStorage.setItem('cerebroAuth', 'true');
+        showHomeFromLogin();
+    } else {
+        // Senha incorreta - mostrar erro
+        input.classList.add('error');
+        error.classList.add('visible');
+        
+        // Limpar erro após 2 segundos
+        setTimeout(() => {
+            input.classList.remove('error');
+            error.classList.remove('visible');
+        }, 2000);
+        
+        // Limpar campo
+        input.value = '';
+        input.focus();
+    }
+}
+
+function handlePasswordKeypress(event) {
+    if (event.key === 'Enter') {
+        checkPassword();
+    }
+    // Limpar erro ao digitar
+    const input = document.getElementById('passwordInput');
+    const error = document.getElementById('loginError');
+    input.classList.remove('error');
+    error.classList.remove('visible');
+}
+
+function showHomeFromLogin() {
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('homeScreen').classList.add('visible');
+}
+
+function checkAuth() {
+    // Verificar se já está autenticado na sessão
+    if (sessionStorage.getItem('cerebroAuth') === 'true') {
+        showHomeFromLogin();
+    } else {
+        // Focar no campo de senha
+        setTimeout(() => {
+            const input = document.getElementById('passwordInput');
+            if (input) input.focus();
+        }, 500);
+    }
+}
+
+// Verificar autenticação ao carregar
+document.addEventListener('DOMContentLoaded', function() {
+    checkAuth();
+});
 
 // === ESTADO GLOBAL ===
 let currentStack = 100;
@@ -81,6 +145,7 @@ function calculateAndUpdateStats() {
 // === NAVEGAÇÃO ENTRE TELAS ===
 function showHomeScreen() {
     document.getElementById('homeScreen').classList.remove('hidden');
+    document.getElementById('homeScreen').classList.add('visible');
     document.getElementById('phaseScreen').classList.remove('visible');
     document.getElementById('appContainer').classList.remove('visible');
     const huContainer = document.getElementById('appContainerHU');
@@ -89,6 +154,7 @@ function showHomeScreen() {
 
 function showPhaseScreen() {
     document.getElementById('homeScreen').classList.add('hidden');
+    document.getElementById('homeScreen').classList.remove('visible');
     document.getElementById('phaseScreen').classList.add('visible');
     document.getElementById('appContainer').classList.remove('visible');
     const huContainer = document.getElementById('appContainerHU');
@@ -98,6 +164,7 @@ function showPhaseScreen() {
 
 function showVisualizer() {
     document.getElementById('homeScreen').classList.add('hidden');
+    document.getElementById('homeScreen').classList.remove('visible');
     document.getElementById('phaseScreen').classList.remove('visible');
     document.getElementById('appContainer').classList.add('visible');
     const huContainer = document.getElementById('appContainerHU');
@@ -1391,6 +1458,7 @@ const STACKS_HU = [3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 17, 20, 23, 25, 28, 30, 35, 
 // === NAVEGAÇÃO HU ===
 function showVisualizerHU() {
     document.getElementById('homeScreen').classList.add('hidden');
+    document.getElementById('homeScreen').classList.remove('visible');
     document.getElementById('phaseScreen').classList.remove('visible');
     document.getElementById('appContainer').classList.remove('visible');
     document.getElementById('appContainerHU').classList.add('visible');

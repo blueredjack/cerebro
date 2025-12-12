@@ -14,16 +14,173 @@ body {
 }
 
 /* ============================================
+   TELA 0: LOGIN
+   ============================================ */
+.login-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    background: linear-gradient(135deg, #0b1929 0%, #1a1a2e 50%, #0b1929 100%);
+}
+.login-screen.hidden { display: none; }
+
+.login-container {
+    background: rgba(20, 30, 48, 0.95);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    border-radius: 20px;
+    padding: 50px 40px;
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        0 0 40px rgba(0, 212, 255, 0.1);
+    animation: loginFadeIn 0.5s ease;
+}
+
+@keyframes loginFadeIn {
+    from { 
+        opacity: 0; 
+        transform: translateY(-20px) scale(0.95); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0) scale(1); 
+    }
+}
+
+.login-logo {
+    font-size: 4rem;
+    margin-bottom: 10px;
+    animation: loginPulse 2s ease-in-out infinite;
+}
+
+@keyframes loginPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.login-title {
+    font-size: 2.5rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #00d4ff, #9b59b6, #00d4ff);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradientShift 3s ease infinite;
+    letter-spacing: 6px;
+    margin-bottom: 8px;
+}
+
+.login-subtitle {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-bottom: 40px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.login-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(0, 212, 255, 0.3);
+    border-radius: 12px;
+    padding: 16px 20px;
+    font-size: 1.1rem;
+    color: #fff;
+    text-align: center;
+    letter-spacing: 4px;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.login-input::placeholder {
+    color: #5a6a7a;
+    letter-spacing: 1px;
+}
+
+.login-input:focus {
+    border-color: #00d4ff;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+    background: rgba(0, 212, 255, 0.05);
+}
+
+.login-input.error {
+    border-color: #e74c3c;
+    animation: loginShake 0.5s ease;
+}
+
+@keyframes loginShake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-10px); }
+    40%, 80% { transform: translateX(10px); }
+}
+
+.login-error {
+    color: #e74c3c;
+    font-size: 0.85rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    margin-top: -5px;
+}
+
+.login-error.visible {
+    opacity: 1;
+}
+
+.login-btn {
+    background: linear-gradient(135deg, #00d4ff, #0099cc);
+    border: none;
+    border-radius: 12px;
+    padding: 16px 32px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0b1929;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-top: 10px;
+}
+
+.login-btn:hover {
+    background: linear-gradient(135deg, #00e5ff, #00aadd);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 212, 255, 0.4);
+}
+
+.login-btn:active {
+    transform: translateY(0);
+}
+
+.login-footer {
+    margin-top: 30px;
+    color: #4a5568;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* ============================================
    TELA 1: HOME
    ============================================ */
 .home-screen {
-    display: flex;
+    display: none;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     min-height: 100vh;
     padding: 20px;
 }
+.home-screen.visible { display: flex; }
 .home-screen.hidden { display: none; }
 
 .logo {

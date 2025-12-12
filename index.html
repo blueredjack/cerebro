@@ -8,6 +8,32 @@
 </head>
 <body>
     <!-- ============================================
+         TELA 0: LOGIN
+         ============================================ -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-container">
+            <div class="login-logo">🧠</div>
+            <div class="login-title">CEREBRO</div>
+            <div class="login-subtitle">Acesso Restrito</div>
+            <div class="login-form">
+                <input 
+                    type="password" 
+                    id="passwordInput" 
+                    class="login-input" 
+                    placeholder="Digite a senha"
+                    onkeypress="handlePasswordKeypress(event)"
+                    autocomplete="off"
+                >
+                <div class="login-error" id="loginError">Senha incorreta</div>
+                <button class="login-btn" onclick="checkPassword()">
+                    ENTRAR
+                </button>
+            </div>
+            <div class="login-footer">Sistema exclusivo para membros</div>
+        </div>
+    </div>
+
+    <!-- ============================================
          TELA 1: HOME
          ============================================ -->
     <div class="home-screen" id="homeScreen">
