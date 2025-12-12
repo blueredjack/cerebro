@@ -228,6 +228,7 @@ function findRFISpot(stack, posIndex) {
 // === SELEÇÃO DE POSIÇÃO ===
 function selectPosition(pos) {
     resetToInitialState();
+    clearActionBadges(); // Limpar badges ao selecionar nova posição
     
     const spotKey = findRFISpot(currentStack, pos);
     
@@ -271,6 +272,7 @@ function updateDisplay() {
     updateFrequencies();
     updateStats();
     updateHistory();
+    updateActionBadges(); // Atualizar badges de ação
     document.getElementById('handDetails').classList.remove('visible');
 }
 
@@ -820,6 +822,95 @@ function updateTableDisplay(key) {
             const seat = document.querySelector(`.seat-${POSITIONS[posIdx].toLowerCase()}`);
             if (seat) seat.classList.add('folded');
         });
+    }
+    
+    // Atualizar badges de ação em cada posição
+    updateActionBadges();
+}
+
+// Atualiza os badges mostrando ação de cada posição
+function updateActionBadges() {
+    // Limpar todos os badges primeiro
+    for (let i = 0; i < 7; i++) {
+        const badge = document.getElementById(`action-badge-${i}`);
+        if (badge) {
+            badge.className = 'seat-action-badge';
+            badge.textContent = '';
+        }
+    }
+    
+    if (!currentSpot || !currentSpot.s) return;
+    
+    const sequence = currentSpot.s;
+    let raiseCount = 0; // Conta raises para determinar 3bet, 4bet, etc.
+    
+    // Processar cada ação na sequência
+    sequence.forEach((action, idx) => {
+        const playerIdx = action.player;
+        const badge = document.getElementById(`action-badge-${playerIdx}`);
+        
+        if (!badge) return;
+        
+        const amountBB = action.amount ? (action.amount / 100000).toFixed(2).replace(/\.?0+$/, '') : 0;
+        
+        let badgeText = '';
+        let badgeClass = '';
+        
+        switch (action.type) {
+            case 'F':
+                badgeText = 'FOLD';
+                badgeClass = 'fold';
+                break;
+            case 'C':
+                if (amountBB > 0) {
+                    badgeText = `CALL ${amountBB}`;
+                } else {
+                    badgeText = 'CHECK';
+                }
+                badgeClass = 'call';
+                break;
+            case 'R':
+                raiseCount++;
+                const pctStack = (action.amount / 100000 / currentStack) * 100;
+                
+                if (pctStack >= 90) {
+                    badgeText = 'ALL-IN';
+                    badgeClass = 'allin';
+                } else if (raiseCount === 1) {
+                    badgeText = `OPEN ${amountBB}`;
+                    badgeClass = 'open';
+                } else if (raiseCount === 2) {
+                    badgeText = `3BET ${amountBB}`;
+                    badgeClass = 'bet-3bet';
+                } else if (raiseCount === 3) {
+                    badgeText = `4BET ${amountBB}`;
+                    badgeClass = 'bet-4bet';
+                } else {
+                    badgeText = `5BET+ ${amountBB}`;
+                    badgeClass = 'bet-5bet';
+                }
+                break;
+            case 'X':
+                badgeText = 'CHECK';
+                badgeClass = 'call';
+                break;
+        }
+        
+        if (badgeText) {
+            badge.textContent = badgeText;
+            badge.className = `seat-action-badge visible ${badgeClass}`;
+        }
+    });
+}
+
+// Limpa badges ao resetar mesa
+function clearActionBadges() {
+    for (let i = 0; i < 7; i++) {
+        const badge = document.getElementById(`action-badge-${i}`);
+        if (badge) {
+            badge.className = 'seat-action-badge';
+            badge.textContent = '';
+        }
     }
 }
 
@@ -1498,6 +1589,7 @@ function updateDisplayHU() {
     updateFrequencyListHU();
     updateHistoryHU();
     updateStatsDisplayHU();
+    updateActionBadgesHU();
 }
 
 function updateRangeGridHU() {
@@ -1929,6 +2021,77 @@ function updateHistoryHU() {
     </div>`;
     
     content.innerHTML = html;
+}
+
+// Atualiza os badges de ação na mesa HU
+function updateActionBadgesHU() {
+    // Limpar badges HU
+    for (let i = 0; i < 2; i++) {
+        const badge = document.getElementById(`action-badge-hu-${i}`);
+        if (badge) {
+            badge.className = 'seat-action-badge';
+            badge.textContent = '';
+        }
+    }
+    
+    if (!currentSpotHU || !currentSpotHU.s) return;
+    
+    const sequence = currentSpotHU.s;
+    let raiseCount = 0;
+    
+    // Mapeamento HU: player 0 = SB (índice 0), player 1 = BB (índice 1)
+    sequence.forEach((action) => {
+        const playerIdx = action.player; // 0 = SB, 1 = BB
+        const badge = document.getElementById(`action-badge-hu-${playerIdx}`);
+        
+        if (!badge) return;
+        
+        const amountBB = action.amount ? (action.amount / HU_SCALE).toFixed(2).replace(/\.?0+$/, '') : 0;
+        
+        let badgeText = '';
+        let badgeClass = '';
+        
+        switch (action.type) {
+            case 'F':
+                badgeText = 'FOLD';
+                badgeClass = 'fold';
+                break;
+            case 'C':
+                if (parseFloat(amountBB) > 0) {
+                    badgeText = `CALL ${amountBB}`;
+                } else {
+                    badgeText = 'CHECK';
+                }
+                badgeClass = 'call';
+                break;
+            case 'R':
+                raiseCount++;
+                const pctStack = (action.amount / HU_SCALE / currentStackHU) * 100;
+                
+                if (pctStack >= 90) {
+                    badgeText = 'ALL-IN';
+                    badgeClass = 'allin';
+                } else if (raiseCount === 1) {
+                    badgeText = `OPEN ${amountBB}`;
+                    badgeClass = 'open';
+                } else if (raiseCount === 2) {
+                    badgeText = `3BET ${amountBB}`;
+                    badgeClass = 'bet-3bet';
+                } else if (raiseCount === 3) {
+                    badgeText = `4BET ${amountBB}`;
+                    badgeClass = 'bet-4bet';
+                } else {
+                    badgeText = `5BET+ ${amountBB}`;
+                    badgeClass = 'bet-5bet';
+                }
+                break;
+        }
+        
+        if (badgeText) {
+            badge.textContent = badgeText;
+            badge.className = `seat-action-badge visible ${badgeClass}`;
+        }
+    });
 }
 
 function updateStatsDisplayHU() {
