@@ -1149,7 +1149,7 @@ if (typeof SPOTS_DATA !== 'undefined') {
 
 // Constantes HU
 const HU_POSITIONS = ['SB', 'BB'];
-const HU_POSITION_LETTERS = ['S', 'X']; // S = SB (BTN), X = BB
+const HU_POSITION_LETTERS = ['U', 'X']; // U = SB (BTN), X = BB (conforme dados HU)
 
 // Estado HU
 let currentStackHU = 100;
@@ -1161,8 +1161,8 @@ let melhorEVAtivoHU = false;
 let exploitAtivoHU = false;
 let exploitBonusHU = 0;
 
-// Stacks disponíveis para HU (pode ser diferente)
-const STACKS_HU = [5, 6, 7, 8, 9, 10, 12, 15, 17, 20, 25, 30, 35, 40, 50, 75, 100];
+// Stacks disponíveis para HU (diferentes do 7-MAX)
+const STACKS_HU = [3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 17, 20, 23, 25, 28, 30, 35, 40, 45, 50];
 
 // === NAVEGAÇÃO HU ===
 function showVisualizerHU() {
@@ -1187,10 +1187,9 @@ function initVisualizerHU() {
 }
 
 function calculateAndUpdateStatsHU() {
-    if (typeof SPOTS_DATA === 'undefined') return;
+    if (typeof SPOTS_DATA_HU === 'undefined') return;
     
-    // Por enquanto, usar os mesmos dados (futuramente pode ter dados HU específicos)
-    const spots = Object.keys(SPOTS_DATA);
+    const spots = Object.keys(SPOTS_DATA_HU);
     const totalSpots = spots.length;
     
     const stacks = new Set();
@@ -1342,8 +1341,8 @@ function selectPositionHU(posIndex) {
     
     console.log('HU - Buscando spot:', spotKey);
     
-    if (SPOTS_DATA && SPOTS_DATA[spotKey]) {
-        currentSpotHU = SPOTS_DATA[spotKey];
+    if (SPOTS_DATA_HU && SPOTS_DATA_HU[spotKey]) {
+        currentSpotHU = SPOTS_DATA_HU[spotKey];
         currentSpotKeyHU = spotKey;
         navigationPathHU = [{ key: spotKey, position: posIndex }];
         updateDisplayHU();
@@ -1352,9 +1351,9 @@ function selectPositionHU(posIndex) {
         console.log('HU - Spot não encontrado, tentando alternativas...');
         // Tentar encontrar qualquer spot para essa posição
         const prefix = `${currentStackHU}BB_${posLetter}_`;
-        const found = Object.keys(SPOTS_DATA).find(k => k.startsWith(prefix));
+        const found = Object.keys(SPOTS_DATA_HU).find(k => k.startsWith(prefix));
         if (found) {
-            currentSpotHU = SPOTS_DATA[found];
+            currentSpotHU = SPOTS_DATA_HU[found];
             currentSpotKeyHU = found;
             navigationPathHU = [{ key: found, position: posIndex }];
             updateDisplayHU();
@@ -1533,7 +1532,7 @@ function updateActionButtonsHU() {
     const actions = currentSpotHU.a || [];
     
     container.innerHTML = actions.map((action, idx) => {
-        const hasNext = action.node && SPOTS_DATA[`${currentStackHU}BB_${currentSpotKeyHU?.split('_')[1]}_${getHistoryFromKey(currentSpotKeyHU)}${action.type}`];
+        const hasNext = action.node && SPOTS_DATA_HU[`${currentStackHU}BB_${currentSpotKeyHU?.split('_')[1]}_${getHistoryFromKey(currentSpotKeyHU)}${action.type}`];
         const colorClass = getActionColorClass(action, idx);
         const label = formatActionNameHU(action);
         
@@ -1557,19 +1556,19 @@ function selectActionHU(actionIndex) {
     const currentHistory = getHistoryFromKey(currentSpotKeyHU);
     const newHistory = currentHistory + action.type;
     
-    // Determinar próxima posição
-    const currentPosLetter = currentSpotKeyHU?.split('_')[1] || 'S';
-    const nextPosLetter = currentPosLetter === 'S' ? 'X' : 'S';
+    // Determinar próxima posição (HU: U = SB/BTN, X = BB)
+    const currentPosLetter = currentSpotKeyHU?.split('_')[1] || 'U';
+    const nextPosLetter = currentPosLetter === 'U' ? 'X' : 'U';
     
     const nextKey = `${currentStackHU}BB_${nextPosLetter}_${newHistory}`;
     
-    if (SPOTS_DATA && SPOTS_DATA[nextKey]) {
-        currentSpotHU = SPOTS_DATA[nextKey];
+    if (SPOTS_DATA_HU && SPOTS_DATA_HU[nextKey]) {
+        currentSpotHU = SPOTS_DATA_HU[nextKey];
         currentSpotKeyHU = nextKey;
         navigationPathHU.push({ key: nextKey, action: action.type });
         updateDisplayHU();
         
-        const posIndex = nextPosLetter === 'S' ? 0 : 1;
+        const posIndex = nextPosLetter === 'U' ? 0 : 1;
         updateHeroBadgeHU(posIndex);
     } else {
         console.log('HU - Próximo spot não encontrado:', nextKey);
@@ -1655,7 +1654,7 @@ function updateActionHistoryHU() {
     
     // Adicionar posição atual
     const currentPos = currentSpotKeyHU?.split('_')[1];
-    const currentPosName = currentPos === 'S' ? 'SB' : 'BB';
+    const currentPosName = currentPos === 'U' ? 'SB' : 'BB';
     if (history.length > 0) {
         html += `<span class="action-arrow">→</span>`;
     }
@@ -1676,7 +1675,7 @@ function updateStatsDisplayHU() {
     }
     
     const currentPos = currentSpotKeyHU?.split('_')[1];
-    const posName = currentPos === 'S' ? 'SB' : 'BB';
+    const posName = currentPos === 'U' ? 'SB' : 'BB';
     if (posEl) posEl.textContent = posName;
     
     const freqs = calculateRangeFrequenciesHU();
@@ -1705,11 +1704,11 @@ function goBackHU() {
         navigationPathHU.pop();
         const prev = navigationPathHU[navigationPathHU.length - 1];
         currentSpotKeyHU = prev.key;
-        currentSpotHU = SPOTS_DATA[prev.key];
+        currentSpotHU = SPOTS_DATA_HU[prev.key];
         updateDisplayHU();
         
         const posLetter = prev.key.split('_')[1];
-        const posIndex = posLetter === 'S' ? 0 : 1;
+        const posIndex = posLetter === 'U' ? 0 : 1;
         updateHeroBadgeHU(posIndex);
     } else {
         resetToInitialStateHU();
