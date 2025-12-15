@@ -448,6 +448,52 @@ function updateRangeGrid() {
 }
 
 // === AÇÕES ===
+
+// Verifica se uma ação tem spot de continuação
+function actionHasContinuation(actionIndex) {
+    if (!currentSpot || !currentSpotKey || !currentSpot.a || !currentSpot.a[actionIndex]) {
+        return false;
+    }
+    
+    const action = currentSpot.a[actionIndex];
+    const actionType = action.type;
+    const actionAmount = action.amount || 0;
+    
+    // Fold sempre tem "continuação" (ou próxima posição assume, ou fim da mão)
+    if (actionType === 'F') return true;
+    
+    // Verificar se existe próximo spot
+    const match = currentSpotKey.match(/^(\d+)BB_([UHCBSDX])_(.*)$/);
+    if (!match) return false;
+    
+    const [, stack, posLetter, history] = match;
+    const currentPosIdx = POSITION_LETTERS.indexOf(posLetter);
+    
+    const currentSequence = currentSpot.s || [];
+    const expectedSequence = [...currentSequence, { type: actionType, amount: actionAmount }];
+    
+    // Buscar spot pela sequência
+    const prefix = `${stack}BB_`;
+    for (let offset = 1; offset <= 7; offset++) {
+        const nextPosIdx = (currentPosIdx + offset) % 7;
+        const nextPosLetter = POSITION_LETTERS[nextPosIdx];
+        const keyPrefix = `${prefix}${nextPosLetter}_`;
+        
+        const matchingKeys = Object.keys(SPOTS_DATA).filter(k => k.startsWith(keyPrefix));
+        
+        for (const candidateKey of matchingKeys) {
+            const candidateSpot = SPOTS_DATA[candidateKey];
+            if (!candidateSpot.s) continue;
+            
+            if (sequencesMatch(expectedSequence, candidateSpot.s)) {
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
 function updateActions() {
     const row = document.getElementById('actionsRow');
     if (!currentSpot || !currentSpot.a) {
@@ -459,10 +505,14 @@ function updateActions() {
         const label = getActionLabel(a, currentStack);
         const btnClass = getButtonClass(a, i, currentStack);
         const amount = a.amount ? formatAmount(a.amount, currentStack) : '';
+        const hasContinuation = actionHasContinuation(i);
+        const disabledClass = !hasContinuation && a.type !== 'F' ? 'no-continuation' : '';
+        const tooltip = !hasContinuation && a.type !== 'F' ? 'title="Sem dados para esta linha"' : '';
         
-        return `<button class="action-btn ${btnClass}" onclick="executeAction(${i})">
+        return `<button class="action-btn ${btnClass} ${disabledClass}" onclick="executeAction(${i})" ${tooltip}>
             <span>${label}</span>
             ${amount ? `<span class="btn-amount">${amount}</span>` : ''}
+            ${!hasContinuation && a.type !== 'F' ? '<span class="no-data-indicator">⚠</span>' : ''}
         </button>`;
     }).join('');
 }
@@ -716,17 +766,21 @@ function findSpotBySequence(stack, currentPosIdx, expectedSequence) {
 
 // Compara duas sequências de ações (com tolerância para valores)
 function sequencesMatch(expected, candidate) {
-    if (expected.length !== candidate.length) return false;
+    if (expected.length !== candidate.length) {
+        return false;
+    }
     
     for (let i = 0; i < expected.length; i++) {
         const exp = expected[i];
         const cand = candidate[i];
         
         // Tipo deve ser igual
-        if (exp.type !== cand.type) return false;
+        if (exp.type !== cand.type) {
+            return false;
+        }
         
-        // Para raises, verificar valor com tolerância de 5%
-        if (exp.type === 'R' && exp.amount > 0) {
+        // Para raises e calls com valor, verificar valor com tolerância de 5%
+        if ((exp.type === 'R' || exp.type === 'C') && exp.amount > 0) {
             const tolerance = exp.amount * 0.05;
             if (Math.abs(exp.amount - cand.amount) > tolerance) {
                 return false;
@@ -799,11 +853,17 @@ function showEmptySpot(posIdx, history, context) {
         cell.style.color = '#7a8a9a';
     });
     
+    // Mensagem mais informativa
+    const contextMsg = context === 'RFI' 
+        ? `${heroPos} assume a posição de abertura`
+        : `Esta linha (${context}) não possui dados no solver`;
+    
     // Limpar ações e stats
     document.getElementById('actionsRow').innerHTML = `
-        <div style="color: #7a8a9a; text-align: center; padding: 20px;">
-            Dados não disponíveis para este spot<br>
-            <small>Histórico: ${history}</small>
+        <div style="color: #7a8a9a; text-align: center; padding: 20px; line-height: 1.6;">
+            <div style="font-size: 1.1em; color: #fbbf24; margin-bottom: 8px;">⚠ Spot não disponível</div>
+            <div>${contextMsg}</div>
+            <small style="opacity: 0.7;">Use o botão ← para voltar ou selecione outra posição</small>
         </div>`;
     document.getElementById('freqList').innerHTML = '';
     document.getElementById('statFold').textContent = '-';
