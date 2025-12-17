@@ -7,12 +7,31 @@ Sistema avançado de visualização de ranges para MTT (Multi-Table Tournament) 
 
 ---
 
+## 🚀 Quick Start
+
+### Desenvolvimento Local
+1. Clone o repositório
+2. Abra `index.html` diretamente no navegador
+3. Senha de acesso: `cerebro2025`
+
+### Deploy no Vercel via GitHub
+1. Faça push das alterações:
+```bash
+git add .
+git commit -m "feat: sua mensagem"
+git push origin main
+```
+2. Deploy automático em ~30 segundos
+3. Acesse: [cerebro-brown-beta.vercel.app](https://cerebro-brown-beta.vercel.app)
+
+---
+
 ## 📊 Status Atual
 
 | Item | Valor |
 |------|-------|
-| **Versão** | 2.0.0 |
-| **Última Atualização** | 2025-12-12 |
+| **Versão** | 2.0.1 |
+| **Última Atualização** | 2025-12-17 |
 | **Status** | ✅ Online |
 | **Spots 7-MAX** | 700+ |
 | **Spots HU** | 200+ |
@@ -25,10 +44,15 @@ Sistema avançado de visualização de ranges para MTT (Multi-Table Tournament) 
 ```
 cerebro/
 ├── index.html          # Página principal (Home, Fases, 7-MAX, HU)
-├── styles.css          # Estilos (dark theme, responsivo, mesa dinâmica)
-├── app.js              # Lógica da aplicação
-├── current_spots.js    # Dados 7-MAX (~9MB, 700+ spots)
-├── spots_hu.js         # Dados HU (~500KB, 200+ spots)
+├── css/
+│   └── styles.css      # Estilos (dark theme, responsivo, mesa dinâmica)
+├── js/
+│   └── app.js          # Lógica da aplicação
+├── data/
+│   ├── spots.js        # Dados 7-MAX (~12MB, 700+ spots)
+│   └── spots_hu.js     # Dados HU (~453KB, 200+ spots)
+├── .gitignore          # Arquivos ignorados pelo Git
+├── vercel.json         # Configuração de deploy Vercel
 └── README.md           # Documentação e changelog
 ```
 
@@ -126,6 +150,21 @@ SB escolhe Raise 11.25BB:
 ---
 
 ## 📋 CHANGELOG
+
+### [2.0.1] - 2025-12-17
+**🔧 Correções de estrutura e otimizações de deploy**
+
+#### Corrigido
+- **Estrutura de diretórios** - Arquivos organizados em `css/`, `js/`, `data/`
+- **Caminhos dos arquivos** - HTML agora aponta corretamente para subdiretórios
+- **Nomenclatura de arquivos** - `spots.js` e `spots_hu.js` padronizados
+
+#### Adicionado
+- **vercel.json** - Configuração otimizada de cache e headers
+- **.gitignore** - Exclusão de arquivos desnecessários do repositório
+- **Quick Start** - Guia rápido de desenvolvimento e deploy no README
+
+---
 
 ### [2.0.0] - 2025-12-12
 **🎯 Badges de ação, navegação por sequência e melhorias críticas**
@@ -307,4 +346,4 @@ git push origin main
 
 ---
 
-**Última atualização:** 2025-12-12 | **Versão:** 2.0.0
+**Última atualização:** 2025-12-17 | **Versão:** 2.0.1
