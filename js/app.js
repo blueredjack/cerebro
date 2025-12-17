@@ -449,7 +449,7 @@ function updateRangeGrid() {
 
 // === AÇÕES ===
 
-// Verifica se uma ação tem spot de continuação
+// Verifica se uma ação tem spot de continuação (usa tolerância restritiva de 15%)
 function actionHasContinuation(actionIndex) {
     if (!currentSpot || !currentSpotKey || !currentSpot.a || !currentSpot.a[actionIndex]) {
         return false;
@@ -472,7 +472,7 @@ function actionHasContinuation(actionIndex) {
     const currentSequence = currentSpot.s || [];
     const expectedSequence = [...currentSequence, { type: actionType, amount: actionAmount }];
     
-    // Buscar spot pela sequência
+    // Buscar spot pela sequência com tolerância restritiva (15%)
     const prefix = `${stack}BB_`;
     for (let offset = 1; offset <= 7; offset++) {
         const nextPosIdx = (currentPosIdx + offset) % 7;
@@ -484,10 +484,29 @@ function actionHasContinuation(actionIndex) {
         for (const candidateKey of matchingKeys) {
             const candidateSpot = SPOTS_DATA[candidateKey];
             if (!candidateSpot.s) continue;
+            if (candidateSpot.s.length !== expectedSequence.length) continue;
             
-            if (sequencesMatch(expectedSequence, candidateSpot.s)) {
-                return true;
+            // Verificar match com tolerância de 15%
+            let isMatch = true;
+            for (let i = 0; i < expectedSequence.length; i++) {
+                const exp = expectedSequence[i];
+                const cand = candidateSpot.s[i];
+                
+                if (exp.type !== cand.type) {
+                    isMatch = false;
+                    break;
+                }
+                
+                if ((exp.type === 'R' || exp.type === 'C') && exp.amount > 0) {
+                    const tolerance = exp.amount * 0.15;
+                    if (Math.abs(exp.amount - cand.amount) > tolerance) {
+                        isMatch = false;
+                        break;
+                    }
+                }
             }
+            
+            if (isMatch) return true;
         }
     }
     
@@ -737,9 +756,11 @@ function getNextSpotKey(currentKey, actionType, actionAmount = 0, raiseIndex = 0
     return { key: null, nextPos: nextPosIdx, newHistory };
 }
 
-// Busca spot pela sequência de ações (compara valores exatos)
+// Busca spot pela sequência de ações (encontra o mais próximo)
 function findSpotBySequence(stack, currentPosIdx, expectedSequence) {
     const prefix = `${stack}BB_`;
+    let bestMatch = null;
+    let bestDiff = Infinity;
     
     // Procurar em todas as posições seguintes
     for (let offset = 1; offset <= 7; offset++) {
@@ -753,15 +774,48 @@ function findSpotBySequence(stack, currentPosIdx, expectedSequence) {
         for (const candidateKey of matchingKeys) {
             const candidateSpot = SPOTS_DATA[candidateKey];
             if (!candidateSpot.s) continue;
+            if (candidateSpot.s.length !== expectedSequence.length) continue;
             
-            // Verificar se a sequência bate
-            if (sequencesMatch(expectedSequence, candidateSpot.s)) {
-                return candidateKey;
+            // Calcular diferença total
+            let totalDiff = 0;
+            let typeMatch = true;
+            
+            for (let i = 0; i < expectedSequence.length; i++) {
+                const exp = expectedSequence[i];
+                const cand = candidateSpot.s[i];
+                
+                // Tipo deve ser igual
+                if (exp.type !== cand.type) {
+                    typeMatch = false;
+                    break;
+                }
+                
+                // Acumular diferença de valores
+                if ((exp.type === 'R' || exp.type === 'C') && exp.amount > 0) {
+                    totalDiff += Math.abs(exp.amount - cand.amount);
+                }
             }
+            
+            // Se tipos batem e diferença é menor, este é melhor candidato
+            if (typeMatch && totalDiff < bestDiff) {
+                // Verificar se diferença está dentro de limite razoável (50% max)
+                const lastExpAmt = expectedSequence[expectedSequence.length - 1].amount || 1;
+                const maxAllowedDiff = lastExpAmt * 0.5;
+                
+                if (totalDiff <= maxAllowedDiff) {
+                    bestDiff = totalDiff;
+                    bestMatch = candidateKey;
+                }
+            }
+        }
+        
+        // Se encontrou match exato na primeira posição, retornar
+        if (bestMatch && bestDiff === 0) {
+            return bestMatch;
         }
     }
     
-    return null;
+    return bestMatch;
 }
 
 // Compara duas sequências de ações (com tolerância para valores)
@@ -779,9 +833,10 @@ function sequencesMatch(expected, candidate) {
             return false;
         }
         
-        // Para raises e calls com valor, verificar valor com tolerância de 5%
+        // Para raises e calls com valor, verificar valor com tolerância de 30%
+        // (permite variação entre sizings similares como 2.0BB vs 2.5BB)
         if ((exp.type === 'R' || exp.type === 'C') && exp.amount > 0) {
-            const tolerance = exp.amount * 0.05;
+            const tolerance = exp.amount * 0.30;
             if (Math.abs(exp.amount - cand.amount) > tolerance) {
                 return false;
             }
