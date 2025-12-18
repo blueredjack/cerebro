@@ -15,14 +15,12 @@ Sistema avançado de visualização de ranges para MTT (Multi-Table Tournament) 
 3. Senha de acesso: `cerebro2025`
 
 ### Deploy no Vercel via GitHub
-1. Faça push das alterações:
 ```bash
 git add .
 git commit -m "feat: sua mensagem"
 git push origin main
 ```
-2. Deploy automático em ~30 segundos
-3. Acesse: [cerebro-brown-beta.vercel.app](https://cerebro-brown-beta.vercel.app)
+Deploy automático em ~30 segundos → [cerebro-brown-beta.vercel.app](https://cerebro-brown-beta.vercel.app)
 
 ---
 
@@ -30,11 +28,12 @@ git push origin main
 
 | Item | Valor |
 |------|-------|
-| **Versão** | 2.0.1 |
-| **Última Atualização** | 2025-12-17 |
+| **Versão** | 2.1.0 |
+| **Última Atualização** | 2025-12-18 |
 | **Status** | ✅ Online |
-| **Spots 7-MAX** | 700+ |
+| **Spots 7-MAX** | 829 |
 | **Spots HU** | 200+ |
+| **Stacks** | 3BB - 100BB (19 níveis) |
 | **Modos Disponíveis** | VANILLA (CEV Symmetric), HU |
 
 ---
@@ -43,244 +42,172 @@ git push origin main
 
 ```
 cerebro/
-├── index.html          # Página principal (Home, Fases, 7-MAX, HU)
+├── index.html          # Página principal
 ├── css/
-│   └── styles.css      # Estilos (dark theme, responsivo, mesa dinâmica)
+│   └── styles.css      # Estilos (dark theme, responsivo)
 ├── js/
 │   └── app.js          # Lógica da aplicação
 ├── data/
-│   ├── spots.js        # Dados 7-MAX (~12MB, 700+ spots)
+│   ├── spots.js        # Dados 7-MAX (~12MB, 829 spots)
 │   └── spots_hu.js     # Dados HU (~453KB, 200+ spots)
-├── .gitignore          # Arquivos ignorados pelo Git
-├── vercel.json         # Configuração de deploy Vercel
-└── README.md           # Documentação e changelog
+├── .gitignore
+├── vercel.json
+└── README.md
 ```
 
 ---
 
-## 🎯 Funcionalidades Implementadas
+## 🎯 Funcionalidades
 
 ### Tela Home
 - [x] Logo animado CEREBRO
-- [x] Cards de categoria (PKO 🎯, VANILLA ⚔️, Drill 🎮, AULAS 🔍)
+- [x] Cards de categoria (PKO, VANILLA, Drill, AULAS)
 - [x] VANILLA ativo, outros "Em breve"
-
-### Tela Seleção de Fase
-- [x] CEV Symmetric 7-MAX - ATIVO
-- [x] Heads-Up (HU) - ATIVO
-- [x] Fases futuras listadas (SOON)
 
 ### Visualizador 7-MAX
 - [x] Mesa 7-max com posições clicáveis
-- [x] **Badges de ação** acima de cada posição (OPEN, 3BET, 4BET, FOLD, etc.)
+- [x] Badges de ação (OPEN, 3BET, 4BET, FOLD, etc.)
 - [x] Range grid 13x13 com cores dinâmicas
-- [x] **Navegação por sequência** (diferencia múltiplos sizings de raise)
-- [x] **Modo Melhor EV** - mostra apenas a ação de maior EV
-- [x] **Modo Exploit** - ajusta ranges com bonus de EV
+- [x] Navegação por sequência de ações
+- [x] Modo Melhor EV (GTO)
+- [x] Modo Exploit com ajuste de EV
 - [x] Painel de frequências com hover filtering
 - [x] Painel de histórico de ações
 - [x] Detalhes de EV por mão
-- [x] Barra de stacks (5BB - 100BB)
-- [x] Dealer button na borda da mesa
+- [x] Barra de stacks (3BB - 100BB)
 
 ### Visualizador HU (Heads-Up)
 - [x] Mesa HU com SB e BB
-- [x] Badges de ação (OPEN, 3BET, 4BET, ALL-IN)
-- [x] Escala específica HU (40M vs 100K do 7-MAX)
-- [x] Navegação por path (U_R, H_C, H_R, U_CR, U_RR)
+- [x] Escala específica HU (40M)
+- [x] Navegação por path
 - [x] Modo Melhor EV
-- [x] Painel de histórico de ações
-- [x] Detecção automática de All-in (≥90% stack)
-
----
-
-## 🏷️ Badges de Ação
-
-Cada posição mostra a ação tomada com badge colorido:
-
-| Ação | Cor | Exemplo |
-|------|-----|---------|
-| FOLD | Cinza | `FOLD` |
-| OPEN | Amarelo | `OPEN 2.5` |
-| CALL | Ciano | `CALL 8.75` |
-| 3BET | Verde | `3BET 11.25` |
-| 4BET | Laranja | `4BET 28` |
-| 5BET+ | Vermelho | `5BET+ 60` |
-| ALL-IN | Vermelho pulsante | `ALL-IN` |
 
 ---
 
 ## 🎨 Sistema de Cores
 
-| Ação | Cor | Hex | Uso |
-|------|-----|-----|-----|
-| Fold | Cinza | `#4a5568` | Grid e botões |
-| Check | Azul | `#3b82f6` | Botões |
-| Call | Ciano | `#00bfff` | Grid e botões |
-| 1º Raise | Amarelo | `#ffff00` | Open raise |
-| 2º Raise | Verde | `#00ff00` | 3bet |
-| 3º Raise | Roxo | `#9333ea` | 4bet |
-| 4º Raise+ | Rosa | `#f9a8d4` | 5bet+ |
-| All-in | Vermelho | `#dc2626` | ≥90% stack |
+### Ações Disponíveis (por posição)
+| Ação | Cor | Hex |
+|------|-----|-----|
+| Fold | Cinza | `#4a5568` |
+| Call/Limp | Azul | `#3b82f6` |
+| 1º Raise | Amarelo | `#ffff00` |
+| 2º Raise | Verde | `#00ff00` |
+| 3º Raise | Roxo | `#9333ea` |
+| 4º+ Raise | Rosa | `#f9a8d4` |
+| All-in | Vermelho | `#dc2626` |
+
+**Nota:** A contagem de raises **reinicia para cada posição**. Exemplo:
+- CO abre → Amarelo (1º raise do CO)
+- BTN 3bet → Amarelo (1º raise do BTN)
+- CO 4bet → Verde (2º raise do CO)
+
+### Badges na Mesa (histórico da mão)
+| Badge | Cor | Descrição |
+|-------|-----|-----------|
+| FOLD | Cinza | Jogador foldou |
+| CALL | Azul | Call ou check |
+| OPEN | Amarelo | Primeiro raise da mão |
+| 3BET | Verde | Segundo raise da mão |
+| 4BET | Roxo | Terceiro raise da mão |
+| 5BET+ | Rosa | Quarto+ raise da mão |
+| ALL-IN | Vermelho | All-in (≥90% stack) |
 
 ---
 
-## 🔄 Navegação por Sequência
+## 🔄 Navegação
 
-A navegação usa a **sequência completa de ações** (tipo + valor) para encontrar o próximo spot:
+### Lógica de Navegação
+1. Busca por **sequência exata** de ações (tipo + valor)
+2. Se não encontrar exato, busca **mais próximo** (mesmo tipo)
+3. Indicador ⚠ quando não há continuação disponível
 
-```javascript
-// Exemplo: SB tem opções de 3bet 8.75BB e 11.25BB
-// Ao clicar em cada um, navega para spots DIFERENTES do BB
-
-SB escolhe Raise 8.75BB:
-  Sequência: [F, F, F, F, R 2.5BB, R 8.75BB]
-  → Encontra: 100BB_X_FFFFRR (com 3bet 8.75BB)
-
-SB escolhe Raise 11.25BB:
-  Sequência: [F, F, F, F, R 2.5BB, R 11.25BB]
-  → Encontra: spot diferente ou "não disponível"
-```
-
-### Funções de Navegação
-- `findSpotBySequence()` - Busca spot pela sequência exata
-- `sequencesMatch()` - Compara sequências com tolerância de 5%
-- `executeAction()` - Executa ação e navega
+### Tolerância de Sizing
+- Match exato: 5% de tolerância
+- Match próximo: aceita qualquer sizing do mesmo tipo
 
 ---
 
 ## 📋 CHANGELOG
 
-### [2.0.1] - 2025-12-17
-**🔧 Correções de estrutura e otimizações de deploy**
+### [2.1.0] - 2025-12-18
+**🔧 Correções críticas de navegação e dados**
 
 #### Corrigido
-- **Estrutura de diretórios** - Arquivos organizados em `css/`, `js/`, `data/`
-- **Caminhos dos arquivos** - HTML agora aponta corretamente para subdiretórios
-- **Nomenclatura de arquivos** - `spots.js` e `spots_hu.js` padronizados
+- **Erro de sintaxe** no app.js que impedia login
+- **Spot CO RFI** - removidos dados incorretos (Call, múltiplos sizings)
+- **Sizings RFI** - padronizado Open 2.5BB para todas as posições
+- **Sistema de cores** - contagem de raises por posição (não por histórico)
+- **Tolerância de navegação** - busca por tipo de ação quando sizing não bate
+
+#### Alterado
+- `actionHasContinuation()` - verifica por tipo de ação
+- `findSpotBySequence()` - aceita sizing mais próximo
+- `getActionCategory()` - conta raises apenas nas ações do spot
+
+---
+
+### [2.0.1] - 2025-12-17
+**📦 Estrutura e otimizações**
+
+#### Corrigido
+- Estrutura de diretórios organizada
+- Caminhos dos arquivos padronizados
 
 #### Adicionado
-- **vercel.json** - Configuração otimizada de cache e headers
-- **.gitignore** - Exclusão de arquivos desnecessários do repositório
-- **Quick Start** - Guia rápido de desenvolvimento e deploy no README
+- vercel.json com cache otimizado
+- .gitignore
 
 ---
 
 ### [2.0.0] - 2025-12-12
-**🎯 Badges de ação, navegação por sequência e melhorias críticas**
+**🎯 Badges de ação e navegação por sequência**
 
 #### Adicionado
-- **Badges de ação** acima de cada posição na mesa
-  - Mostra: FOLD, OPEN X, 3BET X, 4BET X, 5BET+ X, ALL-IN
-  - Cores diferenciadas por tipo de ação
-  - Animação pulsante no ALL-IN
-- **Navegação por sequência** - diferencia múltiplos sizings de raise
-  - `findSpotBySequence()` - busca por sequência exata
-  - `sequencesMatch()` - comparação com tolerância de 5%
-- **Suporte a agregação de dados** - spots podem vir de diferentes uploads/datas
-
-#### Corrigido
-- Navegação agora diferencia corretamente entre raises de tamanhos diferentes
-- Mesma ação (R) com valores diferentes vai para spots diferentes
+- Badges de ação acima de cada posição
+- Navegação por sequência (diferencia múltiplos sizings)
+- Suporte a agregação de dados
 
 ---
 
 ### [1.5.0] - 2025-12-12
-**🃏 Visualizador HU (Heads-Up) completo**
+**🃏 Visualizador HU**
 
 #### Adicionado
-- **Tela HU** - visualizador dedicado para Heads-Up
-- **Escala HU** - 40M (vs 100K do 7-MAX)
-- **Navegação HU** - paths específicos (U_R, H_C, H_R, U_CR, U_RR)
-- **Cores HU** - sistema de cores adaptado
-- **Modo Melhor EV HU** - toggle independente
-- **Histórico HU** - painel de ações separado
+- Tela HU dedicada
+- Escala HU (40M)
+- Navegação HU específica
 
 ---
 
-### [1.4.0] - 2025-12-11
-**⚡ Modo Melhor EV e Exploit**
-
-#### Adicionado
-- **Modo Melhor EV** - mostra apenas a ação de maior EV para cada mão
-- **Modo Exploit** - ajusta EVs com bonus configurável
-- Toggle buttons para ativar/desativar modos
-- Indicador visual quando modos estão ativos
-
----
-
-### [1.3.0] - 2025-12-08
-**🎨 Melhorias visuais, responsividade e histórico de ações**
-
-#### Adicionado
-- Histórico de ações - Painel mostrando sequência do spot
-- Hover filtering - Mouse na frequência filtra o range
-- Layout responsivo
-- Dealer button na borda da mesa
-
----
-
-### [1.2.0] - 2025-12-08
-**🔧 Correção da lógica de navegação**
-
-#### Corrigido
-- Navegação segue ordem correta (EP→MP→HJ→CO→BTN→SB→BB)
-- Lógica de histórico corrigida
-
----
-
-### [1.1.0] - 2025-12-07
-**🎨 Novo layout do visualizador**
-
-- Layout de 3 colunas
-- Mesa oval horizontal
-- Dealer button no BTN
-
----
-
-### [1.0.0] - 2025-12-05
-**🚀 Lançamento inicial**
-
-- Tela Home com categorias
-- Visualizador de ranges básico
-- 668 spots VANILLA CEV Symmetric
-- Deploy via Vercel
-
----
-
-## 🔧 Estrutura dos Dados
+## 📊 Estrutura dos Dados
 
 ### Formato dos Spots
 ```javascript
 {
-  "100BB_D_FFFFR": {
-    "p": 5,           // posição (5=SB)
-    "s": [            // sequência de ações anteriores
+  "100BB_B_FFF": {
+    "p": 3,           // posição (3=CO)
+    "s": [            // sequência anterior
       {"player": 0, "type": "F", "amount": 0},
       {"player": 1, "type": "F", "amount": 0},
-      {"player": 2, "type": "F", "amount": 0},
-      {"player": 3, "type": "F", "amount": 0},
-      {"player": 4, "type": "R", "amount": 250000}  // BTN open 2.5BB
+      {"player": 2, "type": "F", "amount": 0}
     ],
     "a": [            // ações disponíveis
       {"type": "F", "amount": 0},
-      {"type": "C", "amount": 200000},
-      {"type": "R", "amount": 875000},   // 3bet 8.75BB
-      {"type": "R", "amount": 1125000},  // 3bet 11.25BB
-      {"type": "R", "amount": 10000000}  // All-in
+      {"type": "R", "amount": 250000}  // Open 2.5BB
     ],
     "h": {            // hands
-      "AA": {"played": [0, 0, 0.3, 0.7, 0], "evs": [...], "weight": 1}
+      "AA": {"played": [0, 1], "evs": [0, 5.59], "weight": 1}
     }
   }
 }
 ```
 
-### Escalas
-| Modo | Escala | 1 BB |
-|------|--------|------|
-| 7-MAX | 100,000 | 100000 |
-| HU | 40,000,000 | 40000000 |
+### Escala de Valores
+| Modo | 1 BB |
+|------|------|
+| 7-MAX | 100,000 |
+| HU | 40,000,000 |
 
 ### Posições 7-MAX
 | Letra | Posição | Índice |
@@ -295,6 +222,26 @@ SB escolhe Raise 11.25BB:
 
 ---
 
+## 🔧 Funções Principais
+
+### Navegação
+- `selectPosition(pos)` - Inicia navegação RFI
+- `executeAction(idx)` - Executa ação e navega
+- `findSpotBySequence()` - Busca spot por sequência
+- `actionHasContinuation()` - Verifica se existe continuação
+
+### Display
+- `updateDisplay()` - Atualiza toda a UI
+- `updateRangeGrid()` - Atualiza grid de ranges
+- `updateActionBadges()` - Atualiza badges na mesa
+- `getActionCategory()` - Determina cor da ação
+
+### Modos de Análise
+- `toggleMelhorEV()` - Ativa/desativa GTO
+- `toggleExploit()` - Ativa/desativa Exploit
+
+---
+
 ## 🗺️ Roadmap
 
 ### Próximas Funcionalidades
@@ -302,15 +249,12 @@ SB escolhe Raise 11.25BB:
 - [ ] Drill Mode (treino)
 - [ ] AULAS (conteúdo educacional)
 - [ ] CEV Diamond Symmetric
-- [ ] Fases por % do Field
-- [ ] Final Table
-- [ ] ICM integrado
+- [ ] Final Table / ICM
 
 ### Melhorias Planejadas
 - [ ] Mobile responsivo completo
 - [ ] Exportar ranges como imagem
 - [ ] Breadcrumb de navegação
-- [ ] Filtros por tipo de mão
 
 ---
 
@@ -325,25 +269,4 @@ git push origin main
 
 ---
 
-## 📞 Funções Críticas
-
-### Navegação
-- `selectPosition(pos)` - Inicia navegação RFI
-- `executeAction(idx)` - Executa ação e navega
-- `findSpotBySequence()` - Busca spot por sequência
-- `loadSpot(key)` - Carrega spot e atualiza UI
-
-### Display
-- `updateDisplay()` - Atualiza toda a UI
-- `updateActionBadges()` - Atualiza badges de ação
-- `updateTableDisplay()` - Atualiza mesa (hero, folded)
-- `updateHistory()` - Atualiza painel de histórico
-
-### Modos
-- `toggleMelhorEV()` - Ativa/desativa Melhor EV
-- `toggleExploit()` - Ativa/desativa Exploit
-- `getMelhorAcao(hand)` - Retorna melhor ação para mão
-
----
-
-**Última atualização:** 2025-12-17 | **Versão:** 2.0.1
+**Última atualização:** 2025-12-18 | **Versão:** 2.1.0
