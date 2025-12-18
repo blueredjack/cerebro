@@ -1979,17 +1979,20 @@ function checkHasNextHU(actionType, actionIndex) {
     // Construir nova sequência com a ação
     const newSequence = [...currentSequence, { type: actionType, amount: action.amount }];
     
-    // Buscar spot com essa sequência
-    return findSpotBySequenceHU(stack, newSequence) !== null;
+    // Buscar spot com essa sequência (COM TOLERÂNCIA RESTRITA de 10%)
+    const result = findSpotBySequenceHU(stack, newSequence, true);
+    return result !== null;
 }
 
 // Busca spot HU pela sequência de ações
-// Prioriza match exato, mas aceita match por tipo se não encontrar
-function findSpotBySequenceHU(stack, expectedSequence) {
+// strictMatch=true: exige match com tolerância de 10% no valor
+// strictMatch=false: aceita qualquer match por tipo
+function findSpotBySequenceHU(stack, expectedSequence, strictMatch = false) {
     if (typeof SPOTS_DATA_HU === 'undefined') return null;
     
     const prefix = `${stack}_`;
     let exactMatch = null;
+    let closeMatch = null;
     let typeMatch = null;
     let bestDiff = Infinity;
     
@@ -2003,6 +2006,7 @@ function findSpotBySequenceHU(stack, expectedSequence) {
         // Verificar se tipos batem
         let typesMatch = true;
         let totalDiff = 0;
+        let maxPctDiff = 0;
         
         for (let i = 0; i < expectedSequence.length; i++) {
             const exp = expectedSequence[i];
@@ -2015,23 +2019,31 @@ function findSpotBySequenceHU(stack, expectedSequence) {
             
             // Calcular diferença de valores
             if (exp.amount && cand.amount) {
-                totalDiff += Math.abs(exp.amount - cand.amount);
+                const diff = Math.abs(exp.amount - cand.amount);
+                totalDiff += diff;
+                const pctDiff = diff / Math.max(exp.amount, cand.amount);
+                if (pctDiff > maxPctDiff) maxPctDiff = pctDiff;
             }
         }
         
         if (typesMatch) {
-            // Tipos batem - verificar se é match exato ou próximo
             if (totalDiff === 0) {
                 exactMatch = key;
-            } else if (totalDiff < bestDiff) {
+            } else if (maxPctDiff <= 0.1 && totalDiff < bestDiff) {
+                // Match com diferença <= 10%
                 bestDiff = totalDiff;
+                closeMatch = key;
+            } else if (!strictMatch && totalDiff < bestDiff * 10) {
+                // Match por tipo apenas (para navegação fallback)
                 typeMatch = key;
             }
         }
     }
     
-    // Priorizar match exato, senão aceitar match por tipo
-    return exactMatch || typeMatch;
+    if (strictMatch) {
+        return exactMatch || closeMatch;
+    }
+    return exactMatch || closeMatch || typeMatch;
 }
 
 function getHistoryFromKey(key) {
@@ -2075,10 +2087,10 @@ function executeActionHU(actionIndex) {
         player: currentSpotHU.p
     }];
     
-    // Buscar próximo spot
-    const nextKey = findSpotBySequenceHU(stack, newSequence);
+    // Buscar próximo spot (strictMatch=true para exigir sizing correto)
+    const nextKey = findSpotBySequenceHU(stack, newSequence, true);
     
-    console.log('HU - Ação:', action.type, action.amount, '| Key atual:', currentSpotKeyHU, '| Próximo:', nextKey);
+    console.log('HU - Ação:', action.type, action.amount / HU_SCALE, 'BB | Key atual:', currentSpotKeyHU, '| Próximo:', nextKey);
     
     if (nextKey && SPOTS_DATA_HU[nextKey]) {
         currentSpotHU = SPOTS_DATA_HU[nextKey];
@@ -2090,8 +2102,9 @@ function executeActionHU(actionIndex) {
         updateHeroBadgeHU(nextPos);
         updateRangePositionHU();
     } else {
+        const bbAmount = action.amount ? (action.amount / HU_SCALE).toFixed(2) : '0';
         console.log('HU - Próximo spot não disponível para sequência:', newSequence);
-        alert('Próximo nó não disponível nos dados.');
+        alert(`Spot não disponível para esta ação (${action.type} ${bbAmount}BB).\nOs dados HU não incluem continuação para este sizing.`);
     }
 }
 
