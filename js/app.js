@@ -561,45 +561,30 @@ function getActionCategory(action, actionIndex, stack) {
         // All-in: quando o raise é >= 90% do stack
         if (pctStack >= 90) return 'ALLIN';
         
-        // Contar raises no histórico (sequência anterior)
-        const historyRaises = countRaisesInHistory();
+        // Contar apenas raises ANTES desta ação nas opções disponíveis da posição
+        // (não no histórico da mão, apenas nas ações do spot atual)
+        const raisesBefore = countRaisesBeforeIndex(actionIndex);
         
-        // Contar raises antes dessa ação no spot atual
-        const spotRaisesBefore = countRaisesBeforeIndex(actionIndex);
+        // raisesBefore = 0 → este é o 1º raise → Amarelo
+        // raisesBefore = 1 → este é o 2º raise → Verde
+        // raisesBefore = 2 → este é o 3º raise → Roxo
+        // raisesBefore >= 3 → este é o 4º+ raise → Rosa
         
-        // Total de raises antes + 1 (este raise)
-        const raiseNumber = historyRaises + spotRaisesBefore + 1;
-        
-        if (raiseNumber === 1) return 'RAISE_1';  // Primeiro raise - Amarelo
-        if (raiseNumber === 2) return 'RAISE_2';  // Segundo raise - Verde
-        if (raiseNumber === 3) return 'RAISE_3';  // Terceiro raise - Roxo
-        return 'RAISE_4';                          // Quarto+ raise - Rosa
+        if (raisesBefore === 0) return 'RAISE_1';  // Primeiro raise - Amarelo
+        if (raisesBefore === 1) return 'RAISE_2';  // Segundo raise - Verde
+        if (raisesBefore === 2) return 'RAISE_3';  // Terceiro raise - Roxo
+        return 'RAISE_4';                           // Quarto+ raise - Rosa
     }
     
     return 'FOLD';
 }
 
-// Conta raises no histórico (sequência s do spot)
-function countRaisesInHistory() {
-    if (!currentSpot || !currentSpot.s) return 0;
-    return currentSpot.s.filter(a => a.type === 'R').length;
-}
-
-// Conta raises antes de um índice nas ações disponíveis
+// Conta raises antes de um índice nas ações disponíveis do spot
 function countRaisesBeforeIndex(upToIndex) {
     if (!currentSpot || !currentSpot.a) return 0;
     let count = 0;
     for (let i = 0; i < upToIndex; i++) {
         if (currentSpot.a[i].type === 'R') count++;
-    }
-    return count;
-}
-
-function countNonRaises(upToIndex) {
-    if (!currentSpot || !currentSpot.a) return 0;
-    let count = 0;
-    for (let i = 0; i < upToIndex; i++) {
-        if (currentSpot.a[i].type !== 'R') count++;
     }
     return count;
 }
@@ -649,28 +634,16 @@ function getActionCategoryHU(action, actionIndex, stack) {
         // All-in: quando o raise é >= 90% do stack
         if (pctStack >= 90) return 'ALLIN';
         
-        // Contar raises no histórico (sequência anterior)
-        const historyRaises = countRaisesInHistoryHU();
+        // Contar apenas raises ANTES desta ação nas opções disponíveis da posição
+        const raisesBefore = countRaisesBeforeIndexHU(actionIndex);
         
-        // Contar raises antes dessa ação no spot atual
-        const spotRaisesBefore = countRaisesBeforeIndexHU(actionIndex);
-        
-        // Total de raises antes + 1 (este raise)
-        const raiseNumber = historyRaises + spotRaisesBefore + 1;
-        
-        if (raiseNumber === 1) return 'RAISE_1';  // Primeiro raise - Amarelo
-        if (raiseNumber === 2) return 'RAISE_2';  // Segundo raise - Verde
-        if (raiseNumber === 3) return 'RAISE_3';  // Terceiro raise - Roxo
-        return 'RAISE_4';                          // Quarto+ raise - Rosa
+        if (raisesBefore === 0) return 'RAISE_1';  // Primeiro raise - Amarelo
+        if (raisesBefore === 1) return 'RAISE_2';  // Segundo raise - Verde
+        if (raisesBefore === 2) return 'RAISE_3';  // Terceiro raise - Roxo
+        return 'RAISE_4';                           // Quarto+ raise - Rosa
     }
     
     return 'FOLD';
-}
-
-// Conta raises no histórico HU
-function countRaisesInHistoryHU() {
-    if (!currentSpotHU || !currentSpotHU.s) return 0;
-    return currentSpotHU.s.filter(a => a.type === 'R').length;
 }
 
 // Conta raises antes de um índice nas ações disponíveis HU
@@ -679,15 +652,6 @@ function countRaisesBeforeIndexHU(upToIndex) {
     let count = 0;
     for (let i = 0; i < upToIndex; i++) {
         if (currentSpotHU.a[i].type === 'R') count++;
-    }
-    return count;
-}
-
-function countNonRaisesHU(upToIndex) {
-    if (!currentSpotHU || !currentSpotHU.a) return 0;
-    let count = 0;
-    for (let i = 0; i < upToIndex; i++) {
-        if (currentSpotHU.a[i].type !== 'R') count++;
     }
     return count;
 }
