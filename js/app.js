@@ -3,6 +3,8 @@
    app.js - Lógica principal CORRIGIDA
    ============================================ */
 
+
+
 // === CONFIGURAÇÃO DE ACESSO ===
 const ACCESS_PASSWORD = 'cerebro2025'; // Senha de acesso
 
@@ -34,12 +36,18 @@ const RFI_PATTERNS = {
 
 // === SISTEMA DE LOGIN ===
 function checkPassword() {
+    
     const input = document.getElementById('passwordInput');
     const error = document.getElementById('loginError');
     const password = input.value;
     
+    
+    
+    
+    
     if (password === ACCESS_PASSWORD) {
         // Senha correta - salvar sessão e mostrar home
+        
         sessionStorage.setItem('cerebroAuth', 'true');
         showHomeFromLogin();
     } else {
@@ -831,8 +839,6 @@ function findSpotBySequence(stack, currentPosIdx, expectedSequence) {
     }
     
     // Retornar exato se encontrou, senão o mais próximo
-    return exactMatch || closeMatch;
-}
     return exactMatch || closeMatch;
 }
 
