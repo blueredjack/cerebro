@@ -1955,8 +1955,8 @@ function updateActionsHU() {
         const btnClass = getButtonClassHU(a, i, currentStackHU);
         const amount = a.amount ? formatAmountHU(a.amount, currentStackHU) : '';
         
-        // Verificar se tem próximo nó usando a lógica HU
-        const hasNext = checkHasNextHU(a.type);
+        // Verificar se tem próximo nó usando a lógica HU baseada em sequência
+        const hasNext = checkHasNextHU(a.type, i);
         
         return `<button class="action-btn ${btnClass} ${hasNext ? 'has-next' : ''}" onclick="executeActionHU(${i})">
             <span>${label} ${amount}</span>
@@ -1964,35 +1964,65 @@ function updateActionsHU() {
     }).join('');
 }
 
-// Verifica se existe próximo nó para uma ação no HU
-function checkHasNextHU(actionType) {
-    if (!currentSpotKeyHU || actionType === 'F') return false;
+// Verifica se existe próximo nó para uma ação no HU (baseado em sequência)
+function checkHasNextHU(actionType, actionIndex) {
+    if (!currentSpotHU || !currentSpotKeyHU || actionType === 'F') return false;
+    if (actionType === 'X' || actionType === 'C') return false; // Check e Call terminam a ação
     
-    const parts = currentSpotKeyHU.split('_');
-    const stack = parts[0];
-    const currentPos = parts[1];
-    const currentPath = parts[2];
+    const action = currentSpotHU.a[actionIndex];
+    if (!action) return false;
     
-    let nextKey = null;
+    const stack = currentSpotKeyHU.split('BB_')[0] + 'BB';
+    const currentSequence = currentSpotHU.s || [];
     
-    if (currentPos === 'U') {
-        if (currentPath === 'R') {
-            if (actionType === 'C') nextKey = `${stack}_H_C`;
-            else if (actionType === 'R') nextKey = `${stack}_H_R`;
-        } else if (currentPath === 'CR') {
-            if (actionType === 'R') nextKey = `${stack}_H_CRR`;
-        } else if (currentPath === 'RR') {
-            if (actionType === 'R') nextKey = `${stack}_H_RRR`;
+    // Construir nova sequência com a ação
+    const newSequence = [...currentSequence, { type: actionType, amount: action.amount }];
+    
+    // Buscar spot com essa sequência
+    return findSpotBySequenceHU(stack, newSequence) !== null;
+}
+
+// Busca spot HU pela sequência de ações
+function findSpotBySequenceHU(stack, expectedSequence) {
+    if (typeof SPOTS_DATA_HU === 'undefined') return null;
+    
+    const prefix = `${stack}_`;
+    let bestMatch = null;
+    let bestDiff = Infinity;
+    
+    for (const key of Object.keys(SPOTS_DATA_HU)) {
+        if (!key.startsWith(prefix)) continue;
+        
+        const spot = SPOTS_DATA_HU[key];
+        if (!spot.s) continue;
+        if (spot.s.length !== expectedSequence.length) continue;
+        
+        // Verificar se tipos batem
+        let typesMatch = true;
+        let totalDiff = 0;
+        
+        for (let i = 0; i < expectedSequence.length; i++) {
+            const exp = expectedSequence[i];
+            const cand = spot.s[i];
+            
+            if (exp.type !== cand.type) {
+                typesMatch = false;
+                break;
+            }
+            
+            // Calcular diferença de valores
+            if (exp.amount && cand.amount) {
+                totalDiff += Math.abs(exp.amount - cand.amount);
+            }
         }
-    } else {
-        if (currentPath === 'C') {
-            if (actionType === 'R') nextKey = `${stack}_U_CR`;
-        } else if (currentPath === 'R') {
-            if (actionType === 'R') nextKey = `${stack}_U_RR`;
+        
+        if (typesMatch && totalDiff < bestDiff) {
+            bestDiff = totalDiff;
+            bestMatch = key;
         }
     }
     
-    return nextKey && SPOTS_DATA_HU && SPOTS_DATA_HU[nextKey];
+    return bestMatch;
 }
 
 function getHistoryFromKey(key) {
@@ -2013,78 +2043,45 @@ function executeActionHU(actionIndex) {
         return;
     }
     
-    // Determinar próximo spot baseado na estrutura HU
-    // Estrutura de keys: U_R, H_C, H_R, U_CR, U_RR, etc.
-    const currentKey = currentSpotKeyHU;
-    const parts = currentKey.split('_');
-    const stack = parts[0]; // ex: "50BB"
-    const currentPos = parts[1]; // U ou H
-    const currentPath = parts[2]; // R, C, CR, RR, etc.
-    
-    let nextKey = null;
-    
-    if (currentPos === 'U') {
-        // SB está agindo
-        if (currentPath === 'R') {
-            // SB abrindo: C=limp vai para H_C, R=raise vai para H_R
-            if (action.type === 'C') {
-                nextKey = `${stack}_H_C`;
-            } else if (action.type === 'R') {
-                nextKey = `${stack}_H_R`;
-            }
-        } else if (currentPath === 'CR') {
-            // SB facing 3-bet após limp: R=4-bet vai para H_CRR
-            if (action.type === 'R') {
-                nextKey = `${stack}_H_CRR`;
-            }
-        } else if (currentPath === 'RR') {
-            // SB facing 4-bet: R=5-bet vai para H_RRR
-            if (action.type === 'R') {
-                nextKey = `${stack}_H_RRR`;
-            }
-        }
-    } else {
-        // BB está agindo (H)
-        if (currentPath === 'C') {
-            // BB vs limp: R=3-bet vai para U_CR
-            if (action.type === 'R') {
-                nextKey = `${stack}_U_CR`;
-            }
-        } else if (currentPath === 'R') {
-            // BB vs raise: R=3-bet vai para U_RR
-            if (action.type === 'R') {
-                nextKey = `${stack}_U_RR`;
-            }
-        } else if (currentPath === 'CRR') {
-            // BB 4-betting: R=5-bet vai para U_CRRR
-            if (action.type === 'R') {
-                nextKey = `${stack}_U_CRRR`;
-            }
-        } else if (currentPath === 'RRR') {
-            // BB 5-betting: R=6-bet vai para U_RRRR
-            if (action.type === 'R') {
-                nextKey = `${stack}_U_RRRR`;
-            }
-        }
+    // Check não navega (fim da ação no limp pot)
+    if (action.type === 'X') {
+        alert('Check. Ação pré-flop finalizada.');
+        return;
     }
     
-    console.log('HU - Ação:', action.type, '| Key atual:', currentKey, '| Próximo:', nextKey);
+    // Call geralmente termina a ação
+    if (action.type === 'C') {
+        alert('Call. Ação pré-flop finalizada.');
+        return;
+    }
     
-    if (nextKey && SPOTS_DATA_HU && SPOTS_DATA_HU[nextKey]) {
+    // Para raises, buscar próximo spot por sequência
+    const stack = currentSpotKeyHU.split('BB_')[0] + 'BB';
+    const currentSequence = currentSpotHU.s || [];
+    
+    // Construir nova sequência
+    const newSequence = [...currentSequence, { 
+        type: action.type, 
+        amount: action.amount,
+        player: currentSpotHU.p
+    }];
+    
+    // Buscar próximo spot
+    const nextKey = findSpotBySequenceHU(stack, newSequence);
+    
+    console.log('HU - Ação:', action.type, action.amount, '| Key atual:', currentSpotKeyHU, '| Próximo:', nextKey);
+    
+    if (nextKey && SPOTS_DATA_HU[nextKey]) {
         currentSpotHU = SPOTS_DATA_HU[nextKey];
         currentSpotKeyHU = nextKey;
         navigationPathHU.push({ key: nextKey, action: action.type });
         updateDisplayHU();
         
-        const nextPos = nextKey.split('_')[1];
-        const posIndex = nextPos === 'U' ? 0 : 1;
-        updateHeroBadgeHU(posIndex);
+        const nextPos = SPOTS_DATA_HU[nextKey].p;
+        updateHeroBadgeHU(nextPos);
         updateRangePositionHU();
-    } else if (action.type === 'C') {
-        // Call geralmente termina a ação (exceto limp)
-        alert('Ação finalizada (Call). Selecione uma posição para recomeçar.');
     } else {
-        console.log('HU - Próximo spot não disponível:', nextKey);
+        console.log('HU - Próximo spot não disponível para sequência:', newSequence);
         alert('Próximo nó não disponível nos dados.');
     }
 }
