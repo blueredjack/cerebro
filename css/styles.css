@@ -650,45 +650,45 @@ body {
 }
 
 .seat-action-badge.fold {
-    background: linear-gradient(135deg, #4a5568, #2d3748);
+    background: linear-gradient(135deg, #4a5568, #374151);
     color: #a0aec0;
     border: 1px solid #4a5568;
 }
 
 .seat-action-badge.open {
-    background: linear-gradient(135deg, #d69e2e, #b7791f);
-    color: #1a202c;
-    border: 1px solid #d69e2e;
+    background: linear-gradient(135deg, #ffff00, #e6e600);
+    color: #000;
+    border: 1px solid #ffff00;
 }
 
 .seat-action-badge.call {
-    background: linear-gradient(135deg, #38b2ac, #2c7a7b);
-    color: #1a202c;
-    border: 1px solid #38b2ac;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #fff;
+    border: 1px solid #3b82f6;
 }
 
 .seat-action-badge.bet-3bet {
-    background: linear-gradient(135deg, #48bb78, #2f855a);
-    color: #1a202c;
-    border: 1px solid #48bb78;
+    background: linear-gradient(135deg, #00ff00, #00cc00);
+    color: #000;
+    border: 1px solid #00ff00;
 }
 
 .seat-action-badge.bet-4bet {
-    background: linear-gradient(135deg, #ed8936, #c05621);
-    color: #1a202c;
-    border: 1px solid #ed8936;
+    background: linear-gradient(135deg, #9333ea, #7c3aed);
+    color: #fff;
+    border: 1px solid #9333ea;
 }
 
 .seat-action-badge.bet-5bet {
-    background: linear-gradient(135deg, #e53e3e, #c53030);
-    color: #fff;
-    border: 1px solid #e53e3e;
+    background: linear-gradient(135deg, #f9a8d4, #f472b6);
+    color: #000;
+    border: 1px solid #f9a8d4;
 }
 
 .seat-action-badge.allin {
-    background: linear-gradient(135deg, #e53e3e, #9b2c2c);
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
     color: #fff;
-    border: 1px solid #e53e3e;
+    border: 1px solid #dc2626;
     animation: pulse-allin 1.5s infinite;
 }
 
@@ -826,18 +826,18 @@ body {
 }
 
 .history-action.fold {
-    background: #64748b;
+    background: #4a5568;
     color: #fff;
 }
 
 .history-action.call {
-    background: #22c55e;
+    background: #3b82f6;
     color: #fff;
 }
 
 .history-action.raise {
-    background: #e85d04;
-    color: #fff;
+    background: #ffff00;
+    color: #000;
 }
 
 .history-action.check {
@@ -1031,8 +1031,8 @@ body {
     color: #fff; 
 }
 .btn-call { 
-    background: linear-gradient(135deg, #00bfff, #0099cc); 
-    color: #000; 
+    background: linear-gradient(135deg, #3b82f6, #2563eb); 
+    color: #fff; 
 }
 .btn-check { 
     background: linear-gradient(135deg, #3b82f6, #2563eb); 
@@ -1168,11 +1168,16 @@ body {
     flex-shrink: 0;
 }
 
-.freq-color-fold { background: #6a7a8a; }
-.freq-color-call { background: #2ecc71; }
-.freq-color-check { background: #3498db; }
-.freq-color-raise { background: #e07a5f; }
-.freq-color-raise2 { background: #9b59b6; }
+.freq-color-fold { background: #4a5568; }
+.freq-color-call { background: #3b82f6; }
+.freq-color-check { background: #3b82f6; }
+.freq-color-raise { background: #ffff00; }
+.freq-color-raise-1 { background: #ffff00; }
+.freq-color-raise-2 { background: #00ff00; }
+.freq-color-raise-3 { background: #9333ea; }
+.freq-color-raise-4 { background: #f9a8d4; }
+.freq-color-raise2 { background: #00ff00; }
+.freq-color-allin { background: #dc2626; }
 
 .freq-label { 
     flex: 1; 

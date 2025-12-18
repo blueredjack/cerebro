@@ -541,11 +541,11 @@ function updateActions() {
 const ACTION_COLORS = {
     FOLD:     { btn: 'btn-fold',     hex: '#4a5568' },  // Cinza
     CHECK:    { btn: 'btn-check',    hex: '#3b82f6' },  // Azul
-    CALL:     { btn: 'btn-call',     hex: '#00bfff' },  // Ciano
+    CALL:     { btn: 'btn-call',     hex: '#3b82f6' },  // Azul (igual check)
     RAISE_1:  { btn: 'btn-raise-1',  hex: '#ffff00' },  // Amarelo (primeiro raise)
     RAISE_2:  { btn: 'btn-raise-2',  hex: '#00ff00' },  // Verde (segundo raise)
     RAISE_3:  { btn: 'btn-raise-3',  hex: '#9333ea' },  // Roxo (terceiro raise)
-    RAISE_4:  { btn: 'btn-raise-4',  hex: '#f9a8d4' },  // Rosa bebê (quarto raise)
+    RAISE_4:  { btn: 'btn-raise-4',  hex: '#f9a8d4' },  // Rosa (quarto raise+)
     ALLIN:    { btn: 'btn-allin',    hex: '#dc2626' }   // Vermelho (All-in)
 };
 
@@ -561,15 +561,38 @@ function getActionCategory(action, actionIndex, stack) {
         // All-in: quando o raise é >= 90% do stack
         if (pctStack >= 90) return 'ALLIN';
         
-        // Categorizar por índice do raise no spot
-        const raiseIndex = actionIndex - countNonRaises(actionIndex);
-        if (raiseIndex <= 0) return 'RAISE_1';  // Primeiro raise - Amarelo
-        if (raiseIndex === 1) return 'RAISE_2'; // Segundo raise - Verde
-        if (raiseIndex === 2) return 'RAISE_3'; // Terceiro raise - Roxo
-        return 'RAISE_4';                        // Quarto+ raise - Rosa bebê
+        // Contar raises no histórico (sequência anterior)
+        const historyRaises = countRaisesInHistory();
+        
+        // Contar raises antes dessa ação no spot atual
+        const spotRaisesBefore = countRaisesBeforeIndex(actionIndex);
+        
+        // Total de raises antes + 1 (este raise)
+        const raiseNumber = historyRaises + spotRaisesBefore + 1;
+        
+        if (raiseNumber === 1) return 'RAISE_1';  // Primeiro raise - Amarelo
+        if (raiseNumber === 2) return 'RAISE_2';  // Segundo raise - Verde
+        if (raiseNumber === 3) return 'RAISE_3';  // Terceiro raise - Roxo
+        return 'RAISE_4';                          // Quarto+ raise - Rosa
     }
     
     return 'FOLD';
+}
+
+// Conta raises no histórico (sequência s do spot)
+function countRaisesInHistory() {
+    if (!currentSpot || !currentSpot.s) return 0;
+    return currentSpot.s.filter(a => a.type === 'R').length;
+}
+
+// Conta raises antes de um índice nas ações disponíveis
+function countRaisesBeforeIndex(upToIndex) {
+    if (!currentSpot || !currentSpot.a) return 0;
+    let count = 0;
+    for (let i = 0; i < upToIndex; i++) {
+        if (currentSpot.a[i].type === 'R') count++;
+    }
+    return count;
 }
 
 function countNonRaises(upToIndex) {
@@ -626,15 +649,38 @@ function getActionCategoryHU(action, actionIndex, stack) {
         // All-in: quando o raise é >= 90% do stack
         if (pctStack >= 90) return 'ALLIN';
         
-        // Categorizar por índice do raise no spot
-        const raiseIndex = actionIndex - countNonRaisesHU(actionIndex);
-        if (raiseIndex <= 0) return 'RAISE_1';  // Primeiro raise - Amarelo
-        if (raiseIndex === 1) return 'RAISE_2'; // Segundo raise - Verde
-        if (raiseIndex === 2) return 'RAISE_3'; // Terceiro raise - Roxo
-        return 'RAISE_4';                        // Quarto+ raise - Rosa bebê
+        // Contar raises no histórico (sequência anterior)
+        const historyRaises = countRaisesInHistoryHU();
+        
+        // Contar raises antes dessa ação no spot atual
+        const spotRaisesBefore = countRaisesBeforeIndexHU(actionIndex);
+        
+        // Total de raises antes + 1 (este raise)
+        const raiseNumber = historyRaises + spotRaisesBefore + 1;
+        
+        if (raiseNumber === 1) return 'RAISE_1';  // Primeiro raise - Amarelo
+        if (raiseNumber === 2) return 'RAISE_2';  // Segundo raise - Verde
+        if (raiseNumber === 3) return 'RAISE_3';  // Terceiro raise - Roxo
+        return 'RAISE_4';                          // Quarto+ raise - Rosa
     }
     
     return 'FOLD';
+}
+
+// Conta raises no histórico HU
+function countRaisesInHistoryHU() {
+    if (!currentSpotHU || !currentSpotHU.s) return 0;
+    return currentSpotHU.s.filter(a => a.type === 'R').length;
+}
+
+// Conta raises antes de um índice nas ações disponíveis HU
+function countRaisesBeforeIndexHU(upToIndex) {
+    if (!currentSpotHU || !currentSpotHU.a) return 0;
+    let count = 0;
+    for (let i = 0; i < upToIndex; i++) {
+        if (currentSpotHU.a[i].type === 'R') count++;
+    }
+    return count;
 }
 
 function countNonRaisesHU(upToIndex) {
@@ -813,9 +859,9 @@ function findSpotBySequence(stack, currentPosIdx, expectedSequence) {
                 return exactMatch;
             }
             
-            // Guardar o mais próximo se diferença for razoável (< 20% da última ação)
+            // Guardar o mais próximo se diferença for razoável (< 10% da última ação)
             const lastExpAmt = expectedSequence[expectedSequence.length - 1].amount || 100000;
-            const maxAllowedDiff = lastExpAmt * 0.20;
+            const maxAllowedDiff = lastExpAmt * 0.10;
             
             if (totalDiff < closeDiff && totalDiff <= maxAllowedDiff) {
                 closeDiff = totalDiff;
