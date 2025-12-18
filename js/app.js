@@ -470,10 +470,13 @@ function actionHasContinuation(actionIndex) {
     const currentPosIdx = POSITION_LETTERS.indexOf(posLetter);
     
     const currentSequence = currentSpot.s || [];
-    const expectedSequence = [...currentSequence, { type: actionType, amount: actionAmount }];
+    const expectedLength = currentSequence.length + 1;
     
-    // Buscar spot pela sequência com tolerância restritiva (5%)
+    // Buscar spot de continuação que tenha a mesma sequência de tipos
+    // (ignora valores exatos, só verifica se existe alguma continuação com esse tipo de ação)
     const prefix = `${stack}BB_`;
+    const expectedTypes = [...currentSequence.map(s => s.type), actionType];
+    
     for (let offset = 1; offset <= 7; offset++) {
         const nextPosIdx = (currentPosIdx + offset) % 7;
         const nextPosLetter = POSITION_LETTERS[nextPosIdx];
@@ -484,29 +487,18 @@ function actionHasContinuation(actionIndex) {
         for (const candidateKey of matchingKeys) {
             const candidateSpot = SPOTS_DATA[candidateKey];
             if (!candidateSpot.s) continue;
-            if (candidateSpot.s.length !== expectedSequence.length) continue;
+            if (candidateSpot.s.length !== expectedLength) continue;
             
-            // Verificar match com tolerância de 5% (mais precisa para diferenciar sizings)
-            let isMatch = true;
-            for (let i = 0; i < expectedSequence.length; i++) {
-                const exp = expectedSequence[i];
-                const cand = candidateSpot.s[i];
-                
-                if (exp.type !== cand.type) {
-                    isMatch = false;
+            // Verificar se os TIPOS de ação batem (ignora valores para verificação de disponibilidade)
+            let typesMatch = true;
+            for (let i = 0; i < expectedLength; i++) {
+                if (expectedTypes[i] !== candidateSpot.s[i].type) {
+                    typesMatch = false;
                     break;
-                }
-                
-                if ((exp.type === 'R' || exp.type === 'C') && exp.amount > 0) {
-                    const tolerance = exp.amount * 0.05; // 5% para diferenciar sizings
-                    if (Math.abs(exp.amount - cand.amount) > tolerance) {
-                        isMatch = false;
-                        break;
-                    }
                 }
             }
             
-            if (isMatch) return true;
+            if (typesMatch) return true;
         }
     }
     
@@ -823,11 +815,9 @@ function findSpotBySequence(stack, currentPosIdx, expectedSequence) {
                 return exactMatch;
             }
             
-            // Guardar o mais próximo se diferença for razoável (< 10% da última ação)
-            const lastExpAmt = expectedSequence[expectedSequence.length - 1].amount || 100000;
-            const maxAllowedDiff = lastExpAmt * 0.10;
-            
-            if (totalDiff < closeDiff && totalDiff <= maxAllowedDiff) {
+            // Guardar o mais próximo independente da diferença (desde que tipos batam)
+            // Isso permite lidar com spots que têm sizings inconsistentes entre arquivos
+            if (totalDiff < closeDiff) {
                 closeDiff = totalDiff;
                 closeMatch = candidateKey;
             }
@@ -835,9 +825,14 @@ function findSpotBySequence(stack, currentPosIdx, expectedSequence) {
         
         // Se achou match exato nesta posição, retornar
         if (exactMatch) return exactMatch;
+        
+        // Se achou match próximo nesta posição (próxima posição a agir), retornar
+        if (closeMatch) return closeMatch;
     }
     
     // Retornar exato se encontrou, senão o mais próximo
+    return exactMatch || closeMatch;
+}
     return exactMatch || closeMatch;
 }
 
