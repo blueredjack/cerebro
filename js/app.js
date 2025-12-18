@@ -1587,6 +1587,7 @@ let currentSpotHU = null;
 let currentSpotKeyHU = null;
 let selectedHandHU = null;
 let navigationPathHU = [];
+let highlightedActionIndexHU = null; // Para highlight no hover das frequências
 let melhorEVAtivoHU = false;
 let exploitAtivoHU = false;
 let exploitBonusHU = 0;
@@ -1983,11 +1984,13 @@ function checkHasNextHU(actionType, actionIndex) {
 }
 
 // Busca spot HU pela sequência de ações
+// Prioriza match exato, mas aceita match por tipo se não encontrar
 function findSpotBySequenceHU(stack, expectedSequence) {
     if (typeof SPOTS_DATA_HU === 'undefined') return null;
     
     const prefix = `${stack}_`;
-    let bestMatch = null;
+    let exactMatch = null;
+    let typeMatch = null;
     let bestDiff = Infinity;
     
     for (const key of Object.keys(SPOTS_DATA_HU)) {
@@ -2016,13 +2019,19 @@ function findSpotBySequenceHU(stack, expectedSequence) {
             }
         }
         
-        if (typesMatch && totalDiff < bestDiff) {
-            bestDiff = totalDiff;
-            bestMatch = key;
+        if (typesMatch) {
+            // Tipos batem - verificar se é match exato ou próximo
+            if (totalDiff === 0) {
+                exactMatch = key;
+            } else if (totalDiff < bestDiff) {
+                bestDiff = totalDiff;
+                typeMatch = key;
+            }
         }
     }
     
-    return bestMatch;
+    // Priorizar match exato, senão aceitar match por tipo
+    return exactMatch || typeMatch;
 }
 
 function getHistoryFromKey(key) {
@@ -2104,13 +2113,72 @@ function updateFrequencyListHU() {
         const amount = action.amount ? formatAmountHU(action.amount, currentStackHU) : '';
         
         return `
-            <div class="freq-item">
+            <div class="freq-item" data-action-index="${idx}"
+                 onmouseenter="highlightActionHU(${idx})"
+                 onmouseleave="clearHighlightHU()">
                 <div class="freq-color" style="background: ${colorHex}"></div>
-                <span class="freq-label">${label} ${amount}</span>
+                <span class="freq-label">${label}${amount ? ' ' + amount : ''}</span>
                 <span class="freq-value" style="color: ${colorHex}">${(freq * 100).toFixed(1)}%</span>
             </div>
         `;
     }).join('');
+}
+
+// Destaca apenas a ação específica no range HU
+function highlightActionHU(actionIndex) {
+    highlightedActionIndexHU = actionIndex;
+    updateRangeGridFilteredHU(actionIndex);
+}
+
+// Limpa o destaque e mostra todas as ações HU
+function clearHighlightHU() {
+    highlightedActionIndexHU = null;
+    updateRangeGridHU(); // Volta ao normal
+}
+
+// Atualiza o grid HU mostrando apenas a ação filtrada
+function updateRangeGridFilteredHU(actionIndex) {
+    if (!currentSpotHU || !currentSpotHU.a) return;
+    
+    const action = currentSpotHU.a[actionIndex];
+    const category = getActionCategoryHU(action, actionIndex, currentStackHU);
+    const hex = ACTION_COLORS[category]?.hex || '#64748b';
+    
+    document.querySelectorAll('#rangeGridHU .hand-cell').forEach(cell => {
+        const hand = cell.dataset.hand;
+        const hd = currentSpotHU.h ? currentSpotHU.h[hand] : null;
+        
+        if (!hd || !hd.played || !hd.played[actionIndex]) {
+            // Mão não tem essa ação - cinza escuro
+            cell.style.background = '#2d3748';
+            cell.style.color = '#4a5568';
+            cell.innerHTML = hand;
+            return;
+        }
+        
+        const freq = hd.played[actionIndex];
+        
+        if (freq <= 0) {
+            // Frequência zero - cinza
+            cell.style.background = '#2d3748';
+            cell.style.color = '#4a5568';
+            cell.innerHTML = hand;
+            return;
+        }
+        
+        if (freq >= 0.95) {
+            // Quase 100% - bloco inteiro colorido
+            cell.style.background = hex;
+            cell.style.color = '#000';
+            cell.innerHTML = hand;
+        } else {
+            // Frequência parcial - gradiente horizontal
+            const stopPoint = (1 - freq) * 100;
+            cell.style.background = `linear-gradient(90deg, #2d3748 ${stopPoint}%, ${hex} ${stopPoint}%)`;
+            cell.style.color = '#fff';
+            cell.innerHTML = hand;
+        }
+    });
 }
 
 function calculateRangeFrequenciesHU() {
