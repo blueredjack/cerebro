@@ -472,7 +472,7 @@ function actionHasContinuation(actionIndex) {
     const currentSequence = currentSpot.s || [];
     const expectedSequence = [...currentSequence, { type: actionType, amount: actionAmount }];
     
-    // Buscar spot pela sequência com tolerância restritiva (15%)
+    // Buscar spot pela sequência com tolerância restritiva (5%)
     const prefix = `${stack}BB_`;
     for (let offset = 1; offset <= 7; offset++) {
         const nextPosIdx = (currentPosIdx + offset) % 7;
@@ -486,7 +486,7 @@ function actionHasContinuation(actionIndex) {
             if (!candidateSpot.s) continue;
             if (candidateSpot.s.length !== expectedSequence.length) continue;
             
-            // Verificar match com tolerância de 15%
+            // Verificar match com tolerância de 5% (mais precisa para diferenciar sizings)
             let isMatch = true;
             for (let i = 0; i < expectedSequence.length; i++) {
                 const exp = expectedSequence[i];
@@ -498,7 +498,7 @@ function actionHasContinuation(actionIndex) {
                 }
                 
                 if ((exp.type === 'R' || exp.type === 'C') && exp.amount > 0) {
-                    const tolerance = exp.amount * 0.15;
+                    const tolerance = exp.amount * 0.05; // 5% para diferenciar sizings
                     if (Math.abs(exp.amount - cand.amount) > tolerance) {
                         isMatch = false;
                         break;
@@ -759,8 +759,9 @@ function getNextSpotKey(currentKey, actionType, actionAmount = 0, raiseIndex = 0
 // Busca spot pela sequência de ações (encontra o mais próximo)
 function findSpotBySequence(stack, currentPosIdx, expectedSequence) {
     const prefix = `${stack}BB_`;
-    let bestMatch = null;
-    let bestDiff = Infinity;
+    let exactMatch = null;
+    let closeMatch = null;
+    let closeDiff = Infinity;
     
     // Procurar em todas as posições seguintes
     for (let offset = 1; offset <= 7; offset++) {
@@ -776,9 +777,10 @@ function findSpotBySequence(stack, currentPosIdx, expectedSequence) {
             if (!candidateSpot.s) continue;
             if (candidateSpot.s.length !== expectedSequence.length) continue;
             
-            // Calcular diferença total
+            // Verificar se tipos batem e calcular diferença
             let totalDiff = 0;
             let typeMatch = true;
+            let isExact = true;
             
             for (let i = 0; i < expectedSequence.length; i++) {
                 const exp = expectedSequence[i];
@@ -790,32 +792,43 @@ function findSpotBySequence(stack, currentPosIdx, expectedSequence) {
                     break;
                 }
                 
-                // Acumular diferença de valores
+                // Para raises e calls, verificar valor
                 if ((exp.type === 'R' || exp.type === 'C') && exp.amount > 0) {
-                    totalDiff += Math.abs(exp.amount - cand.amount);
+                    const diff = Math.abs(exp.amount - cand.amount);
+                    const tolerance = exp.amount * 0.05; // 5% de tolerância para "exato"
+                    
+                    if (diff > tolerance) {
+                        isExact = false;
+                    }
+                    totalDiff += diff;
                 }
             }
             
-            // Se tipos batem e diferença é menor, este é melhor candidato
-            if (typeMatch && totalDiff < bestDiff) {
-                // Verificar se diferença está dentro de limite razoável (50% max)
-                const lastExpAmt = expectedSequence[expectedSequence.length - 1].amount || 1;
-                const maxAllowedDiff = lastExpAmt * 0.5;
-                
-                if (totalDiff <= maxAllowedDiff) {
-                    bestDiff = totalDiff;
-                    bestMatch = candidateKey;
-                }
+            if (!typeMatch) continue;
+            
+            // Match EXATO tem prioridade absoluta
+            if (isExact) {
+                exactMatch = candidateKey;
+                // Se achou exato na primeira posição válida, retorna imediatamente
+                return exactMatch;
+            }
+            
+            // Guardar o mais próximo se diferença for razoável (< 20% da última ação)
+            const lastExpAmt = expectedSequence[expectedSequence.length - 1].amount || 100000;
+            const maxAllowedDiff = lastExpAmt * 0.20;
+            
+            if (totalDiff < closeDiff && totalDiff <= maxAllowedDiff) {
+                closeDiff = totalDiff;
+                closeMatch = candidateKey;
             }
         }
         
-        // Se encontrou match exato na primeira posição, retornar
-        if (bestMatch && bestDiff === 0) {
-            return bestMatch;
-        }
+        // Se achou match exato nesta posição, retornar
+        if (exactMatch) return exactMatch;
     }
     
-    return bestMatch;
+    // Retornar exato se encontrou, senão o mais próximo
+    return exactMatch || closeMatch;
 }
 
 // Compara duas sequências de ações (com tolerância para valores)
@@ -833,10 +846,10 @@ function sequencesMatch(expected, candidate) {
             return false;
         }
         
-        // Para raises e calls com valor, verificar valor com tolerância de 30%
-        // (permite variação entre sizings similares como 2.0BB vs 2.5BB)
+        // Para raises e calls com valor, verificar valor com tolerância de 5%
+        // (preciso para diferenciar sizings como 8.75BB vs 11.25BB)
         if ((exp.type === 'R' || exp.type === 'C') && exp.amount > 0) {
-            const tolerance = exp.amount * 0.30;
+            const tolerance = exp.amount * 0.05;
             if (Math.abs(exp.amount - cand.amount) > tolerance) {
                 return false;
             }
